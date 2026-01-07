@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = 'code-with-quarkus-jvm'
-        CONTAINER_NAME = 'code-with-quarkus-test'
+        CONTAINER_NAME = "code-with-quarkus-test-${BUILD_NUMBER}"
         SERVICE_DIR = 'service'
         CLIENT_DIR = 'client'
         DOCKERFILE = "${SERVICE_DIR}/src/main/docker/Dockerfile.jvm"
