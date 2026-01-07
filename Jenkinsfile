@@ -37,13 +37,8 @@ pipeline {
 
         stage('Test') {
             steps {
-                sh "docker rm -f ${CONTAINER_NAME} || true"
-
-                echo 'Waiting for port to be released...'
-                sh "sleep 2"
-
                 echo 'Starting container for testing...'
-                sh "docker run -d --name ${CONTAINER_NAME} -p ${TEST_PORT}:${TEST_PORT} ${IMAGE_NAME}:${BUILD_NUMBER}"
+                sh "docker run -d --name ${CONTAINER_NAME} -p ${TEST_PORT}:8080 ${IMAGE_NAME}:${BUILD_NUMBER}"
 
                 echo 'Waiting for service...'
                 timeout(time: 60, unit: 'SECONDS') {
@@ -79,7 +74,7 @@ pipeline {
 
                 echo 'Deploying container...'
                 sh "docker rm -f ${CONTAINER_NAME}-prod || true"
-                sh "docker run -d --name ${CONTAINER_NAME}-prod -p ${PROD_PORT}:${PROD_PORT} ${IMAGE_NAME}:latest"
+                sh "docker run -d --name ${CONTAINER_NAME}-prod -p ${PROD_PORT}:8080 ${IMAGE_NAME}:latest"
             }
         }
     }
