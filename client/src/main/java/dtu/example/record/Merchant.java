@@ -2,16 +2,8 @@ package dtu.example.record;
 
 import java.util.UUID;
 
-public class Merchant {
-    public String Name;
-    public UUID Uuid;
-
-    public Merchant() {
-    }
-
+public record Merchant(String name, UUID id) {
     public Merchant(String name) {
-        this.Name = name;
-        this.Uuid = UUID.randomUUID();
+        this(name, UUID.randomUUID());
     }
-
 }
