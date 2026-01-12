@@ -4,16 +4,25 @@ import dtu.example.record.Customer;
 import dtu.example.record.Merchant;
 import dtu.example.record.Payment;
 import dtu.example.service.DTUPayService;
+import dtu.ws.fastmoney.BankService;
+import dtu.ws.fastmoney.BankServiceException_Exception;
+import dtu.ws.fastmoney.BankService_Service;
+import dtu.ws.fastmoney.User;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.junit.After;
 import org.junit.Assert;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 public class PaymentServiceSteps {
+    private final String API_KEY = System.getenv("SIMPLE_DTU_PAY_API_KEY");
+
     private Customer customer;
     private Merchant merchant;
     private String customerId, merchantId;
@@ -24,9 +33,38 @@ public class PaymentServiceSteps {
     private boolean successful = false;
     private String errorMessage;
 
+    private final BankService bank = new BankService_Service().getBankServicePort();
+    private final List<String> accounts = new ArrayList<>();
+
+    public String registerAccount(String firstName, String lastName, String cprNumber, double initialBalance) throws BankServiceException_Exception {
+        var user = new User();
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setCprNumber(cprNumber);
+
+        var balance = new BigDecimal(initialBalance);
+        var account = bank.createAccountWithBalance(API_KEY, user, balance);
+        accounts.add(account);
+        return account;
+    }
+
+    @After
+    public void tearDown() throws BankServiceException_Exception {
+        if (customerId != null) {
+            payService.unregisterCustomer(customerId);
+        }
+        if (merchantId != null) {
+            payService.unregisterMerchant(merchantId);
+        }
+
+        for (var account : accounts) {
+            bank.retireAccount(API_KEY, account);
+        }
+    }
+
     @Given("a customer with name {string}")
     public void aCustomerWithName(String name) {
-        customer = new Customer(name, UUID.randomUUID());
+        customer = new Customer(UUID.randomUUID(), name);
     }
 
     @Given("the customer is registered with Simple DTU Pay")
@@ -38,7 +76,7 @@ public class PaymentServiceSteps {
 
     @Given("a merchant with name {string}")
     public void aMerchantWithName(String name) {
-        merchant = new Merchant(name, UUID.randomUUID());
+        merchant = new Merchant(UUID.randomUUID(), name);
     }
 
     @Given("the merchant is registered with Simple DTU Pay")
@@ -64,7 +102,7 @@ public class PaymentServiceSteps {
 
     @Given("a customer with name {string}, who is registered with Simple DTU Pay")
     public void aCustomerWithNameWhoIsRegisteredWithSimpleDTUPay(String name) {
-        customer = new Customer(name, UUID.randomUUID());
+        customer = new Customer(UUID.randomUUID(), name);
         customerId = payService.register(customer);
         Assert.assertNotNull(customerId);
         Assert.assertNotEquals("", customerId);
@@ -72,7 +110,7 @@ public class PaymentServiceSteps {
 
     @Given("a merchant with name {string}, who is registered with Simple DTU Pay")
     public void aMerchantWithNameWhoIsRegisteredWithSimpleDTUPay(String name) {
-        merchant = new Merchant(name, UUID.randomUUID());
+        merchant = new Merchant(UUID.randomUUID(), name);
         merchantId = payService.register(merchant);
         Assert.assertNotNull(merchantId);
         Assert.assertNotEquals("", merchantId);
@@ -121,15 +159,5 @@ public class PaymentServiceSteps {
     @Then("an error message is returned saying {string}")
     public void anErrorMessageIsReturnedSaying(String message) {
         Assert.assertEquals(message, errorMessage);
-    }
-
-    @After
-    public void tearDown() {
-        if (customerId != null) {
-            payService.unregisterCustomer(customerId);
-        }
-        if (merchantId != null) {
-            payService.unregisterMerchant(merchantId);
-        }
     }
 }
