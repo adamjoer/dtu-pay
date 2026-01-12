@@ -50,7 +50,7 @@ public class DTUPayService {
         }
     }
 
-    public boolean pay(Double amount, String customerId, String merchantId) {
+    public boolean pay(String amount, String customerId, String merchantId) {
         try (var client = ClientBuilder.newClient()) {
             var paymentRequest = new PaymentRequest(customerId, merchantId, amount);
             try (var response = client.target(baseUrl).path("pay/payments").request().post(Entity.json(paymentRequest))) {

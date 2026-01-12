@@ -1,4 +1,4 @@
 package dtu.example.record;
 
-public record PaymentRequest(String customerId, String merchantId, double amount) {
+public record PaymentRequest(String customerId, String merchantId, String amount) {
 }
