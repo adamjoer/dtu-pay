@@ -6,9 +6,8 @@
     <!-- Tip to update to the latest releases: Run "mvn versions:use-latest-releases" -->
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>dtu</groupId>
-    <artifactId>simple-dtu-pay-client</artifactId>
-    <name>CucumberExample</name>
+    <groupId>dtu.sdws26.gr22.dtu-pay.client</groupId>
+    <artifactId>dtu-pay-client</artifactId>
     <version>SNAPSHOT 0.0.1</version>
 
     <properties>

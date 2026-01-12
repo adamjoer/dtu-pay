@@ -29,8 +29,17 @@ public class PaymentResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
     public String registerCustomer(Customer customer) {
-        var id = payService.registerCustomer(customer.name());
-        return id.toString();
+        try {
+            var id = payService.registerCustomer(
+                    customer.firstName(),
+                    customer.lastName(),
+                    customer.cprNumber(),
+                    customer.bankId()
+            );
+            return id.toString();
+        } catch (NullPointerException e) {
+            throw new BadRequestException("Missing required fields");
+        }
     }
 
     @GET
@@ -63,8 +72,17 @@ public class PaymentResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
     public String registerMerchant(Merchant merchant) {
-        var id = payService.registerMerchant(merchant.name());
-        return id.toString();
+        try {
+            var id = payService.registerMerchant(
+                    merchant.firstName(),
+                    merchant.lastName(),
+                    merchant.cprNumber(),
+                    merchant.bankId()
+            );
+            return id.toString();
+        } catch (NullPointerException e) {
+            throw new BadRequestException("Missing required fields");
+        }
     }
 
     @GET

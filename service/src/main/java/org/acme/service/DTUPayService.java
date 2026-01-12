@@ -20,9 +20,9 @@ public class DTUPayService {
     private final ConcurrentHashMap<UUID, Merchant> merchants = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Payment> payments = new ConcurrentHashMap<>();
 
-    public UUID registerCustomer(String name) {
+    public UUID registerCustomer(String firstName, String lastName, String cprNumber, String bankId) {
         var id = UUID.randomUUID();
-        var customer = new Customer(id, name);
+        var customer = new Customer(id, firstName, lastName, cprNumber, bankId);
         customers.put(id, customer);
         return id;
     }
@@ -39,9 +39,9 @@ public class DTUPayService {
         return Optional.ofNullable(customer);
     }
 
-    public UUID registerMerchant(String name) {
+    public UUID registerMerchant(String firstName, String lastName, String cprNumber, String bankId) {
         var id = UUID.randomUUID();
-        var merchant = new Merchant(id, name);
+        var merchant = new Merchant(id, firstName, lastName, cprNumber, bankId);
         merchants.put(id, merchant);
         return id;
     }

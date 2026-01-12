@@ -8,10 +8,10 @@ import dtu.ws.fastmoney.BankService;
 import dtu.ws.fastmoney.BankServiceException_Exception;
 import dtu.ws.fastmoney.BankService_Service;
 import dtu.ws.fastmoney.User;
+import io.cucumber.java.After;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import org.junit.After;
 import org.junit.Assert;
 
 import java.math.BigDecimal;
@@ -37,6 +37,7 @@ public class PaymentServiceSteps {
     private final List<String> accounts = new ArrayList<>();
 
     public String registerAccount(String firstName, String lastName, String cprNumber, double initialBalance) throws BankServiceException_Exception {
+        Assert.assertNotNull("API_KEY environment variable is not set", API_KEY);
         var user = new User();
         user.setFirstName(firstName);
         user.setLastName(lastName);
@@ -62,28 +63,38 @@ public class PaymentServiceSteps {
         }
     }
 
-    @Given("a customer with name {string}")
-    public void aCustomerWithName(String name) {
-        customer = new Customer(UUID.randomUUID(), name);
+    @Given("a customer with name {string}, last name {string}, and CPR {string}")
+    public void aCustomerWithNameLastNameAndCPR(String firstName, String lastName, String cprNumber) {
+        customer = new Customer(null, firstName, lastName, cprNumber, null);
     }
 
-    @Given("the customer is registered with Simple DTU Pay")
-    public void theCustomerIsRegisteredWithSimpleDTUPay() {
-        customerId = payService.register(customer);
-        Assert.assertNotNull(customerId);
-        Assert.assertNotEquals("", customerId);
+    @Given("the customer is registered with the bank with an initial balance of {double} kr")
+    public void theCustomerIsRegisteredWithTheBankWithAnInitialBalanceOfKr(Double balance) throws BankServiceException_Exception {
+        var bankId = registerAccount(customer.firstName, customer.lastName, customer.cprNumber, balance);
+        customer.bankId = bankId;
     }
 
-    @Given("a merchant with name {string}")
-    public void aMerchantWithName(String name) {
-        merchant = new Merchant(UUID.randomUUID(), name);
+    @Given("the customer is registered with Simple DTU Pay using their bank account")
+    public void theCustomerIsRegisteredWithSimpleDTUPayUsingTheirBankAccount() throws BankServiceException_Exception {
+         customerId = payService.register(customer);
     }
 
-    @Given("the merchant is registered with Simple DTU Pay")
-    public void theMerchantIsRegisteredWithSimpleDTUPay() {
+    @Given("a merchant with name {string}, last name {string}, and CPR {string}")
+    public void aMerchantWithNameLastNameAndCPR(String firstName, String lastName, String cprNumber) {
+        // Write code here that turns the phrase above into concrete actions
+        merchant = new Merchant(null, firstName, lastName, cprNumber, null);
+    }
+
+    @Given("the merchant is registered with the bank with an initial balance of {double} kr")
+    public void theMerchantIsRegisteredWithTheBankWithAnInitialBalanceOfKr(Double amount) throws Exception{
+        // Write code here that turns the phrase above into concrete actions
+        var bankId = registerAccount(merchant.firstName, merchant.lastName, merchant.cprNumber, amount);
+        merchant.bankId = bankId;
+    }
+
+    @Given("the merchant is registered with Simple DTU Pay using their bank account")
+    public void theMerchantIsRegisteredWithSimpleDTUPayUsingTheirBankAccount() {
         merchantId = payService.register(merchant);
-        Assert.assertNotNull(customerId);
-        Assert.assertNotEquals("", customerId);
     }
 
     @When("the merchant initiates a payment for {double} kr by the customer")
@@ -92,72 +103,26 @@ public class PaymentServiceSteps {
             successful = payService.pay(amount, customerId, merchantId);
         } catch (Exception e) {
             successful = false;
+            errorMessage = e.getMessage();
         }
     }
 
     @Then("the payment is successful")
     public void thePaymentIsSuccessful() {
-        Assert.assertTrue("Payment not successful", successful);
+        Assert.assertTrue("Expected payment to be successful, but it failed with error: " + errorMessage, successful);
     }
 
-    @Given("a customer with name {string}, who is registered with Simple DTU Pay")
-    public void aCustomerWithNameWhoIsRegisteredWithSimpleDTUPay(String name) {
-        customer = new Customer(UUID.randomUUID(), name);
-        customerId = payService.register(customer);
-        Assert.assertNotNull(customerId);
-        Assert.assertNotEquals("", customerId);
+    @Then("the balance of the customer at the bank is {double} kr")
+    public void theBalanceOfTheCustomerAtTheBankIsKr(Double amount) throws Exception{
+        var amountBigDecimal = BigDecimal.valueOf(amount);
+        var balance = bank.getAccount(customer.bankId).getBalance();
+        Assert.assertEquals(amountBigDecimal, balance);
     }
 
-    @Given("a merchant with name {string}, who is registered with Simple DTU Pay")
-    public void aMerchantWithNameWhoIsRegisteredWithSimpleDTUPay(String name) {
-        merchant = new Merchant(UUID.randomUUID(), name);
-        merchantId = payService.register(merchant);
-        Assert.assertNotNull(merchantId);
-        Assert.assertNotEquals("", merchantId);
-    }
-
-    @Given("a successful payment of {double} kr from the customer to the merchant")
-    public void aSuccessfulPaymentOfKrFromTheCustomerToTheMerchant(double amount) {
-        try {
-            successful = payService.pay(amount, customerId, merchantId);
-            Assert.assertTrue(successful);
-        } catch (Exception e) {
-            Assert.fail("Payment should have been successful");
-        }
-    }
-
-    @When("the manager asks for a list of payments")
-    public void theManagerAsksForAListOfPayments() {
-        payments = payService.getAllPayments();
-    }
-
-    @Then("the list contains a payments where customer {string} paid {double} kr to merchant {string}")
-    public void theListContainsAPaymentsWhereCustomerPaidKrToMerchant(String customerName, Double amount, String merchantName) {
-        boolean found = payments.stream().anyMatch(payment ->
-                payment.customer().name().equals(customerName) &&
-                        payment.merchant().name().equals(merchantName) &&
-                        payment.amount().doubleValue() == amount
-        );
-        Assert.assertTrue("Payment not found in the list", found);
-    }
-
-    @When("the merchant initiates a payment for {double} kr using customer id {string}")
-    public void theMerchantInitiatesAPaymentForKrUsingCustomerId(Double amount, String customerId) {
-        try {
-            successful = payService.pay(amount, customerId, merchantId);
-        } catch (Exception e) {
-            successful = false;
-            errorMessage = e.getMessage();
-        }
-    }
-
-    @Then("the payment is not successful")
-    public void thePaymentIsNotSuccessful() {
-        Assert.assertFalse("Payment was successful, but should not be", successful);
-    }
-
-    @Then("an error message is returned saying {string}")
-    public void anErrorMessageIsReturnedSaying(String message) {
-        Assert.assertEquals(message, errorMessage);
+    @Then("the balance of the merchant at the bank is {double} kr")
+    public void theBalanceOfTheMerchantAtTheBankIsKr(Double amount) throws Exception{
+        var amountBigDecimal = BigDecimal.valueOf(amount);
+        var balance = bank.getAccount(merchant.bankId).getBalance();
+        Assert.assertEquals(amountBigDecimal, balance);
     }
 }
