@@ -111,6 +111,7 @@ public class PaymentResource {
         } catch (DTUPayException e) {
             return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
         } catch (NullPointerException e) {
+            e.printStackTrace();
             return Response.status(Response.Status.BAD_REQUEST).entity("Missing required fields").build();
         }
     }
