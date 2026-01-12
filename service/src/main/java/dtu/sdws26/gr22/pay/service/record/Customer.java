@@ -1,4 +1,4 @@
-package org.acme.record;
+package dtu.sdws26.gr22.pay.service.record;
 
 import java.util.UUID;
 

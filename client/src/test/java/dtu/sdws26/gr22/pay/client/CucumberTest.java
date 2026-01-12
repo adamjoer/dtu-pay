@@ -1,4 +1,4 @@
-package dtu.example;
+package dtu.sdws26.gr22.pay.client;
 
 
 import org.junit.runner.RunWith;

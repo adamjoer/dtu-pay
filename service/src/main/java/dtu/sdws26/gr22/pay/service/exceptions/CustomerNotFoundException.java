@@ -1,4 +1,4 @@
-package org.acme.exceptions;
+package dtu.sdws26.gr22.pay.service.exceptions;
 
 public class CustomerNotFoundException extends DTUPayException {
     public CustomerNotFoundException(String id) {

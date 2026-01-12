@@ -1,4 +1,4 @@
-package dtu.example.record;
+package dtu.sdws26.gr22.pay.client.record;
 
 import java.util.UUID;
 

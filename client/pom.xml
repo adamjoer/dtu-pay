@@ -6,7 +6,7 @@
     <!-- Tip to update to the latest releases: Run "mvn versions:use-latest-releases" -->
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>dtu.sdws26.gr22.dtu-pay.client</groupId>
+    <groupId>dtu.sdws26.gr22.pay.client</groupId>
     <artifactId>dtu-pay-client</artifactId>
     <version>SNAPSHOT 0.0.1</version>
 

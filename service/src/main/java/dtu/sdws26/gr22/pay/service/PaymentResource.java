@@ -1,16 +1,16 @@
-package org.acme;
+package dtu.sdws26.gr22.pay.service;
 
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.acme.exceptions.DTUPayException;
-import org.acme.exceptions.PaymentException;
-import org.acme.record.Customer;
-import org.acme.record.Merchant;
-import org.acme.record.PaymentRequest;
-import org.acme.service.DTUPayService;
+import dtu.sdws26.gr22.pay.service.exceptions.DTUPayException;
+import dtu.sdws26.gr22.pay.service.exceptions.PaymentException;
+import dtu.sdws26.gr22.pay.service.record.Customer;
+import dtu.sdws26.gr22.pay.service.record.Merchant;
+import dtu.sdws26.gr22.pay.service.record.PaymentRequest;
+import dtu.sdws26.gr22.pay.service.service.DTUPayService;
 
 import java.math.BigDecimal;
 

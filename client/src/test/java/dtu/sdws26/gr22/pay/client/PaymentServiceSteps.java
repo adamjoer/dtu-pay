@@ -1,9 +1,9 @@
-package dtu.example;
+package dtu.sdws26.gr22.pay.client;
 
-import dtu.example.record.Customer;
-import dtu.example.record.Merchant;
-import dtu.example.record.Payment;
-import dtu.example.service.DTUPayService;
+import dtu.sdws26.gr22.pay.client.record.Customer;
+import dtu.sdws26.gr22.pay.client.record.Merchant;
+import dtu.sdws26.gr22.pay.client.record.Payment;
+import dtu.sdws26.gr22.pay.client.service.DTUPayService;
 import dtu.ws.fastmoney.BankService;
 import dtu.ws.fastmoney.BankServiceException_Exception;
 import dtu.ws.fastmoney.BankService_Service;

@@ -1,9 +1,9 @@
-package dtu.example.service;
+package dtu.sdws26.gr22.pay.client.service;
 
-import dtu.example.record.Customer;
-import dtu.example.record.Merchant;
-import dtu.example.record.Payment;
-import dtu.example.record.PaymentRequest;
+import dtu.sdws26.gr22.pay.client.record.Customer;
+import dtu.sdws26.gr22.pay.client.record.Merchant;
+import dtu.sdws26.gr22.pay.client.record.Payment;
+import dtu.sdws26.gr22.pay.client.record.PaymentRequest;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.GenericType;

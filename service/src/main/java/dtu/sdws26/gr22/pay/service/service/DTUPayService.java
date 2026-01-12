@@ -1,15 +1,15 @@
-package org.acme.service;
+package dtu.sdws26.gr22.pay.service.service;
 
 import dtu.ws.fastmoney.BankService;
 import dtu.ws.fastmoney.BankServiceException_Exception;
 import dtu.ws.fastmoney.BankService_Service;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.acme.exceptions.CustomerNotFoundException;
-import org.acme.exceptions.MerchantNotFoundException;
-import org.acme.exceptions.PaymentException;
-import org.acme.record.Customer;
-import org.acme.record.Merchant;
-import org.acme.record.Payment;
+import dtu.sdws26.gr22.pay.service.exceptions.CustomerNotFoundException;
+import dtu.sdws26.gr22.pay.service.exceptions.MerchantNotFoundException;
+import dtu.sdws26.gr22.pay.service.exceptions.PaymentException;
+import dtu.sdws26.gr22.pay.service.record.Customer;
+import dtu.sdws26.gr22.pay.service.record.Merchant;
+import dtu.sdws26.gr22.pay.service.record.Payment;
 
 import java.math.BigDecimal;
 import java.time.Instant;
