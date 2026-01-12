@@ -113,7 +113,6 @@ public class DTUPayService {
                     merchant.bankId(),
                     amount,
                     "from " + customer.firstName() + " to " + merchant.firstName());
-            System.console().printf("Transferred %s from %s to %s%n", amount, customer.firstName(), merchant.firstName());
         } catch (BankServiceException_Exception e) {
             throw new PaymentException("Payment failed: " + e.getMessage());
         }
