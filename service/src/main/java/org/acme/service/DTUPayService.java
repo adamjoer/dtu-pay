@@ -1,7 +1,8 @@
 package org.acme.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import org.acme.exceptions.UserNotFoundException;
+import org.acme.exceptions.CustomerNotFoundException;
+import org.acme.exceptions.MerchantNotFoundException;
 import org.acme.record.Customer;
 import org.acme.record.Merchant;
 import org.acme.record.Payment;
@@ -27,16 +28,26 @@ public class DTUPayService {
         return id;
     }
 
-    public void deleteCustomer(UUID id) {
-        if (!customers.containsKey(id)) {
-            throw new UserNotFoundException(String.format("merchant with id \"%s\" is unknown", id));
+    public void deleteCustomer(String id) {
+        try {
+            var uuid = UUID.fromString(id);
+            if (!customers.containsKey(uuid)) {
+                throw new MerchantNotFoundException(uuid.toString());
+            }
+            customers.remove(uuid);
+        } catch (IllegalArgumentException e) {
+            throw new CustomerNotFoundException(id);
         }
-        customers.remove(id);
     }
 
-    public Optional<Customer> getCustomerById(UUID id) {
-        var customer = customers.get(id);
-        return Optional.ofNullable(customer);
+    public Optional<Customer> getCustomerById(String id) {
+        try {
+            var uuid = UUID.fromString(id);
+            var customer = customers.get(uuid);
+            return Optional.ofNullable(customer);
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
     }
 
     public UUID registerMerchant(String firstName, String lastName, String cprNumber, String bankId) {
@@ -46,35 +57,54 @@ public class DTUPayService {
         return id;
     }
 
-    public void deleteMerchant(UUID id) {
-        if (!merchants.containsKey(id)) {
-            throw new UserNotFoundException(String.format("merchant with id \"%s\" is unknown", id));
+    public void deleteMerchant(String id) {
+        try {
+            var uuid = UUID.fromString(id);
+            if (!merchants.containsKey(uuid)) {
+                throw new MerchantNotFoundException(uuid.toString());
+            }
+            merchants.remove(uuid);
+        } catch (IllegalArgumentException e) {
+            throw new MerchantNotFoundException(id);
         }
-        merchants.remove(id);
     }
 
-    public Optional<Merchant> getMerchantById(UUID id) {
+    public Optional<Merchant> getMerchantById(String id) {
         var merchant = merchants.get(id);
         return Optional.ofNullable(merchant);
     }
 
-    public UUID createPayment(UUID customerId, UUID merchantId, BigDecimal amount) {
-        UUID paymentId = UUID.randomUUID();
-        var customer = customers.get(customerId);
-        if (customer == null) {
-            throw new UserNotFoundException(String.format("customer with id \"%s\" is unknown", customerId));
-        }
-        var merchant = merchants.get(merchantId);
-        if (merchant == null) {
-            throw new UserNotFoundException(String.format("merchant with id \"%s\" is unknown", merchantId));
+    public UUID createPayment(String customerId, String merchantId, BigDecimal amount) {
+        UUID customerUuid;
+        UUID merchantUuid;
+        try {
+            customerUuid = UUID.fromString(customerId);
+        } catch (IllegalArgumentException e) {
+            throw new CustomerNotFoundException(customerId);
         }
 
+        try {
+            merchantUuid = UUID.fromString(merchantId);
+        } catch (IllegalArgumentException e) {
+            throw new MerchantNotFoundException(merchantId);
+        }
+
+        var customer = customers.get(customerUuid);
+        if (customer == null) {
+            throw new CustomerNotFoundException(customerUuid.toString());
+        }
+        var merchant = merchants.get(merchantUuid);
+        if (merchant == null) {
+            throw new MerchantNotFoundException(merchantUuid.toString());
+        }
+
+        var paymentId = UUID.randomUUID();
         var payment = new Payment(paymentId, customer, merchant, amount, Instant.now());
         payments.put(paymentId, payment);
         return paymentId;
     }
 
-    public Optional<Payment> getPaymentById(UUID id) {
+    public Optional<Payment> getPaymentById(String id) {
         var payment = payments.get(id);
         return Optional.ofNullable(payment);
     }

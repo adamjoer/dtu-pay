@@ -5,14 +5,13 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.acme.exceptions.UserNotFoundException;
+import org.acme.exceptions.DTUPayException;
 import org.acme.record.Customer;
 import org.acme.record.Merchant;
 import org.acme.record.PaymentRequest;
 import org.acme.service.DTUPayService;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
 @Path("/pay")
 public class PaymentResource {
@@ -46,23 +45,15 @@ public class PaymentResource {
     @Path("/customers/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Customer getCustomerById(@PathParam("id") String id) {
-        try {
-            var uuid = UUID.fromString(id);
-            return payService.getCustomerById(uuid).orElseThrow(() -> new NotFoundException("Customer not found"));
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid UUID format");
-        }
+        return payService.getCustomerById(id).orElseThrow(() -> new NotFoundException("Customer not found"));
     }
 
     @DELETE
     @Path("/customers/{id}")
     public void deleteCustomer(@PathParam("id") String id) {
         try {
-            var uuid = UUID.fromString(id);
-            payService.deleteCustomer(uuid);
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid UUID format");
-        } catch (UserNotFoundException e) {
+            payService.deleteCustomer(id);
+        } catch (DTUPayException e) {
             throw new NotFoundException(e.getMessage());
         }
     }
@@ -89,23 +80,15 @@ public class PaymentResource {
     @Path("/merchants/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Merchant getMerchantById(@PathParam("id") String id) {
-        try {
-            var uuid = UUID.fromString(id);
-            return payService.getMerchantById(uuid).orElseThrow(() -> new NotFoundException("Merchant not found"));
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid UUID format");
-        }
+        return payService.getMerchantById(id).orElseThrow(() -> new NotFoundException("Merchant not found"));
     }
 
     @DELETE
     @Path("/merchants/{id}")
     public void deleteMerchant(@PathParam("id") String id) {
         try {
-            var uuid = UUID.fromString(id);
-            payService.deleteMerchant(uuid);
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid UUID format");
-        } catch (UserNotFoundException e) {
+            payService.deleteMerchant(id);
+        } catch (DTUPayException e) {
             throw new NotFoundException(e.getMessage());
         }
     }
@@ -117,14 +100,12 @@ public class PaymentResource {
     public Response createPayment(PaymentRequest paymentRequest) {
         try {
             var paymentId = payService.createPayment(
-                    UUID.fromString(paymentRequest.customerId()),
-                    UUID.fromString(paymentRequest.merchantId()),
+                    paymentRequest.customerId(),
+                    paymentRequest.merchantId(),
                     new BigDecimal(paymentRequest.amount())
             );
             return Response.ok().entity(paymentId.toString()).build();
-        } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Invalid UUID format").build();
-        } catch (UserNotFoundException e) {
+        } catch (DTUPayException e) {
             return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
         } catch (NullPointerException e) {
             return Response.status(Response.Status.BAD_REQUEST).entity("Missing required fields").build();
@@ -142,11 +123,6 @@ public class PaymentResource {
     @Path("/payments/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Object getPaymentById(@PathParam("id") String id) {
-        try {
-            var uuid = UUID.fromString(id);
-            return payService.getPaymentById(uuid).orElseThrow(() -> new NotFoundException("Payment not found"));
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid UUID format");
-        }
+        return payService.getPaymentById(id).orElseThrow(() -> new NotFoundException("Payment not found"));
     }
 }
