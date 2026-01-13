@@ -6,7 +6,7 @@
     <!-- Tip to update to the latest releases: Run "mvn versions:use-latest-releases" -->
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>dtu.sdws26.gr22.pay</groupId>
+    <groupId>dtu.fm-22</groupId>
     <artifactId>end-to-end-tests</artifactId>
     <version>SNAPSHOT 0.0.1</version>
 
