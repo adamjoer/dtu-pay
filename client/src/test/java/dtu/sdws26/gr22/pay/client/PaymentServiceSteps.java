@@ -3,7 +3,9 @@ package dtu.sdws26.gr22.pay.client;
 import dtu.sdws26.gr22.pay.client.record.Customer;
 import dtu.sdws26.gr22.pay.client.record.Merchant;
 import dtu.sdws26.gr22.pay.client.record.Payment;
-import dtu.sdws26.gr22.pay.client.service.DTUPayService;
+import dtu.sdws26.gr22.pay.client.service.CustomerService;
+import dtu.sdws26.gr22.pay.client.service.MerchantService;
+import dtu.sdws26.gr22.pay.client.service.PaymentService;
 import dtu.ws.fastmoney.BankService;
 import dtu.ws.fastmoney.BankServiceException_Exception;
 import dtu.ws.fastmoney.BankService_Service;
@@ -25,9 +27,11 @@ public class PaymentServiceSteps {
     private Customer customer;
     private Merchant merchant;
     private String customerId, merchantId;
-    private final DTUPayService payService = new DTUPayService();
 
-    private Collection<Payment> payments;
+
+    private final CustomerService customerService = new CustomerService();
+    private final MerchantService merchantService = new MerchantService();
+    private final PaymentService paymentService = new PaymentService();
 
     private boolean successful = false;
     private String errorMessage;
@@ -51,10 +55,10 @@ public class PaymentServiceSteps {
     @After
     public void tearDown() throws BankServiceException_Exception {
         if (customerId != null) {
-            payService.unregisterCustomer(customerId);
+            customerService.unregister(customerId);
         }
         if (merchantId != null) {
-            payService.unregisterMerchant(merchantId);
+            merchantService.unregister(merchantId);
         }
 
         for (var account : accounts) {
@@ -75,7 +79,7 @@ public class PaymentServiceSteps {
 
     @Given("the customer is registered with Simple DTU Pay using their bank account")
     public void theCustomerIsRegisteredWithSimpleDTUPayUsingTheirBankAccount() throws BankServiceException_Exception {
-        customerId = payService.register(customer);
+        customerId = customerService.register(customer);
     }
 
     @Given("a merchant with name {string}, last name {string}, and CPR {string}")
@@ -91,13 +95,13 @@ public class PaymentServiceSteps {
 
     @Given("the merchant is registered with Simple DTU Pay using their bank account")
     public void theMerchantIsRegisteredWithSimpleDTUPayUsingTheirBankAccount() {
-        merchantId = payService.register(merchant);
+        merchantId = merchantService.register(merchant);
     }
 
     @When("the merchant initiates a payment for {string} kr by the customer")
     public void theMerchantInitiatesAPaymentForKrByTheCustomer(String amount) {
         try {
-            successful = payService.pay(amount, customerId, merchantId);
+            successful = paymentService.pay(amount, customerId, merchantId);
         } catch (Exception e) {
             successful = false;
             errorMessage = e.getMessage();

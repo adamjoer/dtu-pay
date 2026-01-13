@@ -10,44 +10,16 @@ import jakarta.ws.rs.core.GenericType;
 
 import java.util.Collection;
 
-public class DTUPayService {
+public class PaymentService {
 
     private final String baseUrl;
 
-    public DTUPayService() {
+    public PaymentService() {
         this("http://localhost:8080");
     }
 
-    public DTUPayService(String baseUrl) {
+    public PaymentService(String baseUrl) {
         this.baseUrl = baseUrl;
-    }
-
-    public String register(Customer customer) {
-        try (var client = ClientBuilder.newClient()) {
-            try (var response = client.target(baseUrl).path("customers").request().post(Entity.json(customer))) {
-                return response.readEntity(String.class);
-            }
-        }
-    }
-
-    public void unregisterCustomer(String customerId) {
-        try (var client = ClientBuilder.newClient()) {
-            client.target(baseUrl).path("customers").path(customerId).request().delete();
-        }
-    }
-
-    public String register(Merchant merchant) {
-        try (var client = ClientBuilder.newClient()) {
-            try (var response = client.target(baseUrl).path("merchants").request().post(Entity.json(merchant))) {
-                return response.readEntity(String.class);
-            }
-        }
-    }
-
-    public void unregisterMerchant(String merchantId) {
-        try (var client = ClientBuilder.newClient()) {
-            client.target(baseUrl).path("merchants").path(merchantId).request().delete();
-        }
     }
 
     public boolean pay(String amount, String customerId, String merchantId) {
