@@ -7,38 +7,52 @@ import dtu.sdws26.gr22.pay.service.record.Merchant;
 import dtu.sdws26.gr22.pay.service.record.PaymentRequest;
 import messaging.Event;
 import messaging.MessageQueue;
+import messaging.TopicNames;
 
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class UserService {
-    public static final String PAYMENT_INFO_REQUESTED = "PaymentInfoRequested";
-    public static final String PAYMENT_INFO_PROVIDED = "PaymentInfoProvided";
 
     private final ConcurrentHashMap<UUID, Customer> customers = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Merchant> merchants = new ConcurrentHashMap<>();
 
-
-    private MessageQueue queue;
+    private final MessageQueue queue;
 
     public UserService(MessageQueue queue) {
         this.queue = queue;
-        this.queue.addHandler(PAYMENT_INFO_REQUESTED, this::handlePaymentInfoRequested);
+        this.queue.addHandler(TopicNames.PAYMENT_INFO_REQUESTED, this::handlePaymentInfoRequested);
+        this.queue.addHandler(TopicNames.CUSTOMER_REGISTRATION_REQUESTED, this::handleRegisterCustomer);
+        this.queue.addHandler(TopicNames.MERCHANT_REGISTRATION_REQUESTED, this::handleRegisterMerchant);
+        this.queue.addHandler(TopicNames.CUSTOMER_UNREGISTRATION_REQUESTED, this::handleUnregisterCustomer);
+        this.queue.addHandler(TopicNames.MERCHANT_UNREGISTRATION_REQUESTED, this::handleUnregisterMerchant);
+        this.queue.addHandler(TopicNames.CUSTOMER_INFO_REQUESTED, this::handleCustomerInfoRequested);
+        this.queue.addHandler(TopicNames.MERCHANT_INFO_REQUESTED, this::handleMerchantInfoRequested);
     }
 
-    public UUID registerCustomer(String firstName, String lastName, String cprNumber, String bankId) {
+    private UUID registerCustomer(String firstName, String lastName, String cprNumber, String bankId) {
         var id = UUID.randomUUID();
         var customer = new Customer(id, firstName, lastName, cprNumber, bankId);
         customers.put(id, customer);
         return id;
     }
 
-    public void unregisterCustomer(String id) {
+    private void handleRegisterCustomer(Event event) {
+        var firstName = event.getArgument(0, String.class);
+        var lastName = event.getArgument(1, String.class);
+        var cprNumber = event.getArgument(2, String.class);
+        var bankId = event.getArgument(3, String.class);
+        var id = registerCustomer( firstName,  lastName,  cprNumber,  bankId);
+        var customerEvent = new Event(TopicNames.CUSTOMER_REGISTRATION_COMPLETED, id.toString());
+        queue.publish(customerEvent);
+    }
+
+    private void unregisterCustomer(String id) {
         try {
             var uuid = UUID.fromString(id);
             if (!customers.containsKey(uuid)) {
-                throw new MerchantNotFoundException(uuid.toString());
+                throw new CustomerNotFoundException(uuid.toString());
             }
             customers.remove(uuid);
         } catch (IllegalArgumentException e) {
@@ -46,24 +60,31 @@ public class UserService {
         }
     }
 
-    public Optional<Customer> getByCustomerId(String id) {
-        try {
-            var uuid = UUID.fromString(id);
-            var customer = customers.get(uuid);
-            return Optional.ofNullable(customer);
-        } catch (IllegalArgumentException e) {
-            return Optional.empty();
-        }
+    private void handleUnregisterCustomer(Event event) {
+        var id = event.getArgument(0, String.class);
+        unregisterCustomer(id);
+        var customerEvent = new Event(TopicNames.CUSTOMER_UNREGISTRATION_COMPLETED, id);
+        queue.publish(customerEvent);
     }
 
-    public UUID registerMerchant(String firstName, String lastName, String cprNumber, String bankId) {
+    private UUID registerMerchant(String firstName, String lastName, String cprNumber, String bankId) {
         var id = UUID.randomUUID();
         var merchant = new Merchant(id, firstName, lastName, cprNumber, bankId);
         merchants.put(id, merchant);
         return id;
     }
 
-    public void unregisterMerchant(String id) {
+    private void handleRegisterMerchant(Event event) {
+        var firstName = event.getArgument(0, String.class);
+        var lastName = event.getArgument(1, String.class);
+        var cprNumber = event.getArgument(2, String.class);
+        var bankId = event.getArgument(3, String.class);
+        var id = registerMerchant( firstName,  lastName,  cprNumber,  bankId);
+        var merchantEvent = new Event(TopicNames.MERCHANT_REGISTRATION_COMPLETED, id.toString());
+        queue.publish(merchantEvent);
+    }
+
+    private void unregisterMerchant(String id) {
         try {
             var uuid = UUID.fromString(id);
             if (!merchants.containsKey(uuid)) {
@@ -75,14 +96,31 @@ public class UserService {
         }
     }
 
-    public Optional<Merchant> getMerchantById(String id) {
-        try {
-            var uuid = UUID.fromString(id);
-            var merchant = merchants.get(uuid);
-            return Optional.ofNullable(merchant);
-        } catch (IllegalArgumentException e) {
-            return Optional.empty();
-        }
+    private void handleUnregisterMerchant(Event event) {
+        var id = event.getArgument(0, String.class);
+        unregisterMerchant(id);
+        var merchantEvent = new Event(TopicNames.MERCHANT_UNREGISTRATION_COMPLETED, id);
+        queue.publish(merchantEvent);
+    }
+
+    private void handleCustomerInfoRequested(Event event) {
+        var customerId = event.getArgument(0, String.class);
+        var correlationId = event.getArgument(1, UUID.class);
+
+        var customer = getByCustomerId(customerId).orElse(null);
+
+        var customerInfoProvidedEvent = new Event(TopicNames.CUSTOMER_INFO_PROVIDED, customer, correlationId);
+        queue.publish(customerInfoProvidedEvent);
+    }
+
+    private void handleMerchantInfoRequested(Event event) {
+        var merchantId = event.getArgument(0, String.class);
+        var correlationId = event.getArgument(1, UUID.class);
+
+        var merchant = getMerchantById(merchantId).orElse(null);
+
+        var merchantInfoProvidedEvent = new Event(TopicNames.MERCHANT_INFO_PROVIDED, merchant, correlationId);
+        queue.publish(merchantInfoProvidedEvent);
     }
 
     private void handlePaymentInfoRequested(Event event) {
@@ -93,12 +131,33 @@ public class UserService {
             var customer = getByCustomerId(paymentRequest.customerId()).orElse(null);
             var merchant = getMerchantById(paymentRequest.merchantId()).orElse(null);
 
-            var paymentInfoProvidedEvent = new Event(PAYMENT_INFO_PROVIDED, customer, merchant, correlationId);
+            var paymentInfoProvidedEvent = new Event(TopicNames.PAYMENT_INFO_PROVIDED, customer, merchant, correlationId);
             queue.publish(paymentInfoProvidedEvent);
 
         } catch (IllegalArgumentException e) {
             System.err.println("handlePaymentInfoRequested: Invalid UUID format in payment request");
         }
     }
+
+    private Optional<Merchant> getMerchantById(String id) {
+        try {
+            var uuid = UUID.fromString(id);
+            var merchant = merchants.get(uuid);
+            return Optional.ofNullable(merchant);
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
+    }
+
+    private Optional<Customer> getByCustomerId(String id) {
+        try {
+            var uuid = UUID.fromString(id);
+            var customer = customers.get(uuid);
+            return Optional.ofNullable(customer);
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
+    }
+
 
 }

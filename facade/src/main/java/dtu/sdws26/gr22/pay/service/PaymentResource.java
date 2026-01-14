@@ -27,16 +27,9 @@ public class PaymentResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.TEXT_PLAIN)
-    public Response createPayment(PaymentRequest paymentRequest) {
-        try {
-            var paymentId = payService.createPayment(paymentRequest);
-            return Response.ok().entity(paymentId.toString()).build();
-        } catch (PaymentException e) {
-            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
-        } catch (DTUPayException e) {
-            return Response.status(Response.Status.NOT_FOUND).entity(e.getMessage()).build();
-        }
+    @Produces(MediaType.APPLICATION_JSON)
+    public Payment createPayment(PaymentRequest paymentRequest) {
+        return payService.createPayment(paymentRequest);
     }
 
     @GET

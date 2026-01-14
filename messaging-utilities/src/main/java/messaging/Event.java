@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
 
+import com.google.gson.reflect.TypeToken;
 import utilities.Utils;
 
 public class Event implements Serializable {
@@ -53,6 +54,12 @@ public class Event implements Serializable {
 		var gson = new Gson();
 		var jsonString = gson.toJson(arguments[i]);
 		return gson.fromJson(jsonString, cls);
+	}
+
+	public <T> T getArgument(int i, TypeToken<T> typeOfT) {
+		var gson = new Gson();
+		var jsonString = gson.toJson(arguments[i]);
+		return gson.fromJson(jsonString, typeOfT.getType());
 	}
 	
 	public <T> T getArgument(int i, Type cls) {

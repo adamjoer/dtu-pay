@@ -58,7 +58,7 @@
             <type>pom</type>
         </dependency>
         <dependency>
-            <groupId>dk.dtu.hubert</groupId>
+            <groupId>dk.dtu.fm-22</groupId>
             <artifactId>messaging-utilities</artifactId>
             <version>3.4.2</version>
         </dependency>
