@@ -39,13 +39,15 @@ public class UserService {
     }
 
     private void handleRegisterCustomer(Event event) {
-        var firstName = event.getArgument(0, String.class);
-        var lastName = event.getArgument(1, String.class);
-        var cprNumber = event.getArgument(2, String.class);
-        var bankId = event.getArgument(3, String.class);
-        var id = registerCustomer( firstName,  lastName,  cprNumber,  bankId);
-        var customerEvent = new Event(TopicNames.CUSTOMER_REGISTRATION_COMPLETED, id.toString());
-        queue.publish(customerEvent);
+        var customer = event.getArgument(0, Customer.class);
+        var correlationId = event.getArgument(1, UUID.class);
+        registerCustomer(
+                customer.firstName(),
+                customer.lastName(),
+                customer.cprNumber(),
+                customer.bankId());
+        var customerRegistrationEvent = new Event(TopicNames.CUSTOMER_REGISTRATION_COMPLETED, correlationId);
+        queue.publish(customerRegistrationEvent);
     }
 
     private void unregisterCustomer(String id) {
@@ -75,13 +77,16 @@ public class UserService {
     }
 
     private void handleRegisterMerchant(Event event) {
-        var firstName = event.getArgument(0, String.class);
-        var lastName = event.getArgument(1, String.class);
-        var cprNumber = event.getArgument(2, String.class);
-        var bankId = event.getArgument(3, String.class);
-        var id = registerMerchant( firstName,  lastName,  cprNumber,  bankId);
-        var merchantEvent = new Event(TopicNames.MERCHANT_REGISTRATION_COMPLETED, id.toString());
-        queue.publish(merchantEvent);
+        var merchant = event.getArgument(0, Merchant.class);
+        var correlationId = event.getArgument(1, UUID.class);
+        registerMerchant(
+                merchant.firstName(),
+                merchant.lastName(),
+                merchant.cprNumber(),
+                merchant.bankId()
+        );
+        var merchantRegistrationEvent = new Event(TopicNames.MERCHANT_REGISTRATION_COMPLETED, correlationId);
+        queue.publish(merchantRegistrationEvent);
     }
 
     private void unregisterMerchant(String id) {
