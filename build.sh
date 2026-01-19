@@ -15,6 +15,10 @@ pushd payment-service
 ./build.sh
 popd
 
+pushd token-service
+./build.sh
+popd
+
 pushd facade
 ./build.sh
 popd
