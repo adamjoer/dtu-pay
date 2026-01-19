@@ -1,12 +1,12 @@
 package dtu.fm22.facade;
 
-
-import dtu.fm22.facade.record.Payment;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
 import dtu.fm22.facade.record.PaymentRequest;
 import dtu.fm22.facade.service.PaymentFacadeService;
+import dtu.fm22.facade.record.Payment;
+import jakarta.inject.Inject;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 
 import java.util.Collection;
 
@@ -23,7 +23,7 @@ public class PaymentResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Payment createPayment(PaymentRequest paymentRequest) {
+    public Payment createPayment(@Valid PaymentRequest paymentRequest) {
         return payService.createPayment(paymentRequest);
     }
 

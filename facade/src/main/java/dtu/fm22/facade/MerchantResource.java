@@ -4,6 +4,7 @@ import dtu.fm22.facade.exceptions.DTUPayException;
 import dtu.fm22.facade.record.Merchant;
 import dtu.fm22.facade.service.MerchantFacadeService;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
@@ -20,7 +21,7 @@ public class MerchantResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Merchant registerMerchant(Merchant merchant) {
+    public Merchant registerMerchant(@Valid Merchant merchant) {
         return merchantFacadeService.register(merchant);
     }
 

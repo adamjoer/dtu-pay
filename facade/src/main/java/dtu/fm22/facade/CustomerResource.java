@@ -5,6 +5,7 @@ import dtu.fm22.facade.record.Customer;
 import dtu.fm22.facade.record.TokenRequest;
 import dtu.fm22.facade.service.CustomerFacadeService;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
@@ -21,7 +22,7 @@ public class CustomerResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Customer registerCustomer(Customer customer) {
+    public Customer registerCustomer(@Valid Customer customer) {
         return customerFacadeService.register(customer);
     }
 
@@ -57,7 +58,7 @@ public class CustomerResource {
     @Path("/{id}/tokens")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public java.util.List<String> requestTokens(@PathParam("id") String id, TokenRequest tokenRequest) {
+    public java.util.List<String> requestTokens(@PathParam("id") String id, @Valid TokenRequest tokenRequest) {
         try {
             // Ensure the customerId in the request matches the path parameter
             if (!tokenRequest.customerId().equals(id)) {
