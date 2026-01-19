@@ -9,6 +9,6 @@ public record Payment(
         Customer customer,
         Merchant merchant,
         BigDecimal amount,
-        Instant timestamp
+        String timestamp
 ) {
 }

@@ -86,7 +86,7 @@ public class PaymentService {
         }
 
         var paymentId = UUID.randomUUID();
-        var payment = new Payment(paymentId, customer, merchant, amountBigDecimal, Instant.now());
+        var payment = new Payment(paymentId, customer, merchant, amountBigDecimal, Instant.now().toString());
         payments.put(paymentId, payment);
 
         Event paymentCreatedEvent = new Event(TopicNames.PAYMENT_CREATED, payment, correlationId);
