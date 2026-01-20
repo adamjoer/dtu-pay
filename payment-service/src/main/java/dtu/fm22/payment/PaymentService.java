@@ -41,6 +41,7 @@ public class PaymentService {
         this.queue.addHandler(TopicNames.TRANSACTION_REQUESTED, this::handleTransactionRequested);
         this.queue.addHandler(TopicNames.CUSTOMER_REPORT_REQUESTED, this::handleCustomerReportRequested);
         this.queue.addHandler(TopicNames.MERCHANT_REPORT_REQUESTED, this::handleMerchantReportRequested);
+        this.queue.addHandler(TopicNames.MANAGER_REPORT_PROVIDED, this::handleManagerReportProvided);
     }
 
     private void handlePaymentRequested(Event event) {
@@ -156,6 +157,17 @@ public class PaymentService {
                 .sorted(Comparator.comparing(Payment::timestamp))
                 .toList();
         Event paymentCreatedEvent = new Event(TopicNames.MERCHANT_REPORT_PROVIDED, filteredList, merchant.id());
+        queue.publish(paymentCreatedEvent);
+    }
+
+    private void handleManagerReportProvided(Event event) {
+        var correlationId = event.getArgument(0, UUID.class);
+        var allPayments = payments
+                .values()
+                .stream()
+                .sorted(Comparator.comparing(Payment::timestamp))
+                .toList();
+        Event paymentCreatedEvent = new Event(TopicNames.MANAGER_REPORT_PROVIDED, allPayments, correlationId);
         queue.publish(paymentCreatedEvent);
     }
 }

@@ -33,6 +33,7 @@ public class ManagerFacadeService {
 
         this.queue.addHandler(TopicNames.CUSTOMER_REPORT_PROVIDED, this::handleReportProvided);
         this.queue.addHandler(TopicNames.MERCHANT_REPORT_PROVIDED, this::handleReportProvided);
+        this.queue.addHandler(TopicNames.MANAGER_REPORT_PROVIDED, this::handleReportProvided);
     }
 
     public Optional<Collection<Payment>> getCustomerReport(String id) {
@@ -63,6 +64,14 @@ public class ManagerFacadeService {
         return Optional.ofNullable(pendingReports.get(merchant.id()).orTimeout(5, TimeUnit.SECONDS).join());
     }
 
+    public Collection<Payment> getManagerReport() {
+        var correlationId = UUID.randomUUID();
+        pendingReports.put(correlationId, new CompletableFuture<>());
+        var event = new Event(TopicNames.MANAGER_REPORT_REQUESTED, correlationId);
+        queue.publish(event);
+
+        return pendingReports.get(correlationId).orTimeout(5, TimeUnit.SECONDS).join();
+    }
 
     public void handleReportProvided(Event event) {
         var collectionType = new TypeToken<Collection<Payment>>() {

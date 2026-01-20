@@ -35,6 +35,9 @@ public class TopicNames {
     public static final String MERCHANT_REPORT_REQUESTED = "MerchantReportRequested";
     public static final String MERCHANT_REPORT_PROVIDED = "MerchantReportProvided";
 
+    public static final String MANAGER_REPORT_REQUESTED = "ManagerReportRequested";
+    public static final String MANAGER_REPORT_PROVIDED = "ManagerReportProvided";
+
     public static final String CUSTOMER_TOKEN_REQUESTED = "CustomerTokenRequested";
     public static final String CUSTOMER_TOKEN_PROVIDED = "CustomerTokenProvided";
 

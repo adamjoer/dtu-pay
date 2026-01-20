@@ -2,21 +2,27 @@ package dtu.fm22.facade;
 
 import dtu.fm22.facade.exceptions.DTUPayException;
 import dtu.fm22.facade.record.Customer;
+import dtu.fm22.facade.record.Payment;
 import dtu.fm22.facade.record.TokenRequest;
 import dtu.fm22.facade.service.CustomerFacadeService;
+import dtu.fm22.facade.service.ManagerFacadeService;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
+import java.util.Collection;
+
 @Path("/customers")
 public class CustomerResource {
 
     public final CustomerFacadeService customerFacadeService;
+    public final ManagerFacadeService managerFacadeService;
 
     @Inject
-    public CustomerResource(CustomerFacadeService customerFacadeService) {
+    public CustomerResource(CustomerFacadeService customerFacadeService, ManagerFacadeService managerFacadeService) {
         this.customerFacadeService = customerFacadeService;
+        this.managerFacadeService = managerFacadeService;
     }
 
     @POST
@@ -68,5 +74,12 @@ public class CustomerResource {
         } catch (RuntimeException e) {
             throw new BadRequestException("Failed to request tokens: " + e.getMessage());
         }
+    }
+
+    @GET
+    @Path("/{id}/reports")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Collection<Payment> getReport(@PathParam("id") String id) {
+        return managerFacadeService.getCustomerReport(id).orElseThrow(() -> new NotFoundException("Customer not found"));
     }
 }
