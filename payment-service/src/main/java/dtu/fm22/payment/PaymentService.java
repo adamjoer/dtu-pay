@@ -3,7 +3,6 @@ package dtu.fm22.payment;
 import dtu.fm22.payment.record.Customer;
 import dtu.fm22.payment.record.Merchant;
 import dtu.fm22.payment.record.PaymentRequest;
-import dtu.fm22.payment.record.TokenValidationRequest;
 import dtu.ws.fastmoney.BankService;
 import dtu.ws.fastmoney.BankServiceException_Exception;
 import dtu.ws.fastmoney.BankService_Service;
@@ -11,6 +10,7 @@ import dtu.fm22.payment.record.Payment;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,9 +39,8 @@ public class PaymentService {
         this.queue.addHandler(TopicNames.PAYMENT_INFO_PROVIDED, this::handlePaymentInfoProvided);
         this.queue.addHandler(TopicNames.TOKEN_VALIDATION_PROVIDED, this::handleTokenValidationProvided);
         this.queue.addHandler(TopicNames.TRANSACTION_REQUESTED, this::handleTransactionRequested);
-        this.queue.addHandler(TopicNames.TRANSACTION_ALL_HISTORY_REQUESTED, this::handleAllTransactionsRequested);
-        this.queue.addHandler(TopicNames.TRANSACTION_CUSTOMER_HISTORY_REQUESTED, this::handleAllTransactionsRequestedCustomer);
-        this.queue.addHandler(TopicNames.TRANSACTION_MERCHANT_HISTORY_REQUESTED, this::handleAllTransactionsRequestedMerchant);
+        this.queue.addHandler(TopicNames.CUSTOMER_REPORT_REQUESTED, this::handleCustomerReportRequested);
+        this.queue.addHandler(TopicNames.MERCHANT_REPORT_REQUESTED, this::handleMerchantReportRequested);
     }
 
     private void handlePaymentRequested(Event event) {
@@ -110,7 +109,7 @@ public class PaymentService {
             return;
         }
 
-        var payment = new Payment(paymentId, customer, merchant, amountBigDecimal, Instant.now().toString());
+        var payment = new Payment(paymentId, customer, merchant, amountBigDecimal, token, Instant.now().toString());
         payments.put(paymentId, payment);
 
         // Mark token as used after successful payment
@@ -137,22 +136,26 @@ public class PaymentService {
         }
     }
 
-    private void handleAllTransactionsRequested(Event event) {
-        Event paymentCreatedEvent = new Event(TopicNames.TRANSACTION_ALL_HISTORY_PROVIDED, payments.values());
-        queue.publish(paymentCreatedEvent);
-    }
-
-    private void handleAllTransactionsRequestedCustomer(Event event) {
+    private void handleCustomerReportRequested(Event event) {
         var customer = event.getArgument(0, Customer.class);
-        var filteredList = payments.values().stream().filter(item -> item.customer().id().equals(customer.id())).toList();
-        Event paymentCreatedEvent = new Event(TopicNames.TRANSACTION_CUSTOMER_HISTORY_PROVIDED, customer.id(), filteredList);
+        var filteredList = payments.values()
+                .stream()
+                .filter(item -> item.customer().id().equals(customer.id()))
+                .sorted(Comparator.comparing(Payment::timestamp)).toList();
+        Event paymentCreatedEvent = new Event(TopicNames.CUSTOMER_REPORT_PROVIDED, filteredList, customer.id());
         queue.publish(paymentCreatedEvent);
     }
 
-    private void handleAllTransactionsRequestedMerchant(Event event) {
+    private void handleMerchantReportRequested(Event event) {
         var merchant = event.getArgument(0, Merchant.class);
-        var filteredList = payments.values().stream().filter(item -> item.merchant().id().equals(merchant.id())).toList();
-        Event paymentCreatedEvent = new Event(TopicNames.TRANSACTION_MERCHANT_HISTORY_PROVIDED, merchant.id(), filteredList);
+        var filteredList = payments
+                .values()
+                .stream()
+                .filter(item -> item.merchant().id().equals(merchant.id()))
+                .map(Payment::withObfuscatedCustomer)
+                .sorted(Comparator.comparing(Payment::timestamp))
+                .toList();
+        Event paymentCreatedEvent = new Event(TopicNames.MERCHANT_REPORT_PROVIDED, filteredList, merchant.id());
         queue.publish(paymentCreatedEvent);
     }
 }

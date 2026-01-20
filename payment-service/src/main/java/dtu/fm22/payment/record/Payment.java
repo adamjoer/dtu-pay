@@ -9,6 +9,11 @@ public record Payment(
         Customer customer,
         Merchant merchant,
         BigDecimal amount,
+        String token,
         String timestamp
 ) {
+
+    public Payment withObfuscatedCustomer() {
+        return new Payment(id, null, merchant, amount, token, timestamp);
+    }
 }

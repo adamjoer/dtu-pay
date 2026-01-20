@@ -32,7 +32,6 @@ public final class PaymentFacadeService {
         this.queue = queue;
         queue.addHandler(TopicNames.PAYMENT_CREATED, this::handlePaymentCreated);
         queue.addHandler(TopicNames.TRANSACTION_PROVIDED, this::handleTransactionProvided);
-        queue.addHandler(TopicNames.TRANSACTION_ALL_HISTORY_PROVIDED, this::handleAllHistoryProvided);
     }
 
     public Payment createPayment(PaymentRequest paymentRequest) {
@@ -61,15 +60,6 @@ public final class PaymentFacadeService {
         return Optional.ofNullable(transactionInProgress.get(correlationId).orTimeout(5, TimeUnit.SECONDS).join());
     }
 
-    public Collection<Payment> getAllPayments() {
-        var correlationId = UUID.randomUUID();
-        transactionHistoryInProgress.put(correlationId, new CompletableFuture<>());
-        var transactionRequestedEvent = new Event(TopicNames.TRANSACTION_ALL_HISTORY_REQUESTED, correlationId);
-        queue.publish(transactionRequestedEvent);
-
-        return transactionHistoryInProgress.get(correlationId).orTimeout(5, TimeUnit.SECONDS).join();
-    }
-
     private void handlePaymentCreated(Event event) {
         var payment = event.getArgument(0, Payment.class);
         var correlationId = event.getArgument(1, UUID.class);
@@ -89,20 +79,6 @@ public final class PaymentFacadeService {
         if (future != null) {
             future.complete(payment);
 //            transactionInProgress.remove(correlationId);
-        }
-    }
-
-    private void handleAllHistoryProvided(Event event) {
-        var collectionType = new TypeToken<Collection<Payment>>() {
-        };
-
-        Collection<Payment> payments = event.getArgument(0, collectionType);
-        var correlationId = event.getArgument(1, UUID.class);
-
-        var future = transactionHistoryInProgress.get(correlationId);
-        if (future != null) {
-            future.complete(payments);
-//            transactionHistoryInProgress.remove(correlationId);
         }
     }
 }

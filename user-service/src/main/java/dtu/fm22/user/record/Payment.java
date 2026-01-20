@@ -9,6 +9,7 @@ public record Payment(
         Customer customer,
         Merchant merchant,
         BigDecimal amount,
-        String timestamp
+        String timestamp,
+        String token
 ) {
 }

@@ -28,12 +28,6 @@ public class PaymentResource {
     }
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Collection<Payment> getAllPayments() {
-        return payService.getAllPayments();
-    }
-
-    @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Payment getPaymentById(@PathParam("id") String id) {

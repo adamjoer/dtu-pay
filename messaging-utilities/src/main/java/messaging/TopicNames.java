@@ -29,14 +29,11 @@ public class TopicNames {
     public static final String TRANSACTION_REQUESTED = "TransactionRequested";
     public static final String TRANSACTION_PROVIDED = "TransactionProvided";
 
-    public static final String TRANSACTION_CUSTOMER_HISTORY_REQUESTED = "TransactionHistoryRequestCustomer";
-    public static final String TRANSACTION_CUSTOMER_HISTORY_PROVIDED = "TransactionHistoryResponseCustomer";
+    public static final String CUSTOMER_REPORT_REQUESTED = "CustomerReportRequested";
+    public static final String CUSTOMER_REPORT_PROVIDED = "CustomerReportProvided";
 
-    public static final String TRANSACTION_MERCHANT_HISTORY_REQUESTED = "TransactionHistoryRequestMerchant";
-    public static final String TRANSACTION_MERCHANT_HISTORY_PROVIDED = "TransactionHistoryResponseMerchant";
-
-    public static final String TRANSACTION_ALL_HISTORY_REQUESTED = "TransactionAllHistoryRequested";
-    public static final String TRANSACTION_ALL_HISTORY_PROVIDED = "TransactionAllHistoryProvided";
+    public static final String MERCHANT_REPORT_REQUESTED = "MerchantReportRequested";
+    public static final String MERCHANT_REPORT_PROVIDED = "MerchantReportProvided";
 
     public static final String CUSTOMER_TOKEN_REQUESTED = "CustomerTokenRequested";
     public static final String CUSTOMER_TOKEN_PROVIDED = "CustomerTokenProvided";
