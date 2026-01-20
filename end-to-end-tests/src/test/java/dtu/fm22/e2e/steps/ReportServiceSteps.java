@@ -1,5 +1,6 @@
-package dtu.fm22.e2e;
+package dtu.fm22.e2e.steps;
 
+import dtu.fm22.e2e.SharedState;
 import dtu.fm22.e2e.record.Payment;
 import dtu.fm22.e2e.service.CustomerService;
 import dtu.fm22.e2e.service.MerchantService;

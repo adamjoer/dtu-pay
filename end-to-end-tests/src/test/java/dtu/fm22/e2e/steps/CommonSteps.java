@@ -1,17 +1,16 @@
-package dtu.fm22.e2e;
+package dtu.fm22.e2e.steps;
 
+import dtu.fm22.e2e.SharedState;
 import dtu.fm22.e2e.record.Customer;
 import dtu.fm22.e2e.record.Merchant;
 import dtu.fm22.e2e.service.CustomerService;
 import dtu.fm22.e2e.service.MerchantService;
-import dtu.ws.fastmoney.BankService;
 import dtu.ws.fastmoney.BankServiceException_Exception;
 import dtu.ws.fastmoney.User;
 import io.cucumber.java.After;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import org.junit.Assert;
 
 import java.math.BigDecimal;
 
