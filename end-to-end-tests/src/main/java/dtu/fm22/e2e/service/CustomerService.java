@@ -71,4 +71,15 @@ public class CustomerService {
             }
         }
     }
+
+    public Customer getProfileInformation(Customer customer) {
+        try (var client = ClientBuilder.newClient()) {
+            try (var response = client.target(baseUrl).path(customer.id.toString()).request().get()) {
+                if (response.getStatus() != 200) {
+                    throw new RuntimeException(response.readEntity(String.class));
+                }
+                return response.readEntity(Customer.class);
+            }
+        }
+    }
 }
