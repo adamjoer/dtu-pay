@@ -1,143 +1,46 @@
 package dtu.fm22.e2e;
 
-import dtu.fm22.e2e.record.Customer;
-import dtu.fm22.e2e.record.Merchant;
 import dtu.fm22.e2e.service.CustomerService;
-import dtu.fm22.e2e.service.MerchantService;
 import dtu.fm22.e2e.service.PaymentService;
-import dtu.ws.fastmoney.BankService;
-import dtu.ws.fastmoney.BankServiceException_Exception;
-import dtu.ws.fastmoney.BankService_Service;
-import dtu.ws.fastmoney.User;
-import io.cucumber.java.After;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import org.junit.Assert;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+
+import static org.junit.Assert.*;
 
 public class PaymentServiceSteps {
-    private final String API_KEY = System.getenv("SIMPLE_DTU_PAY_API_KEY");
-
-    private Customer customer;
-    private Merchant merchant;
-
-    private List<String> tokens;
-
-    private final CustomerService customerService = new CustomerService();
-    private final MerchantService merchantService = new MerchantService();
+    private final SharedState state;
     private final PaymentService paymentService = new PaymentService();
 
-    private boolean successful = false;
-    private String errorMessage;
-
-    private final BankService bank = new BankService_Service().getBankServicePort();
-    private final List<String> accounts = new ArrayList<>();
-
-    public String registerAccount(String firstName, String lastName, String cprNumber, String initialBalance) throws BankServiceException_Exception {
-        Assert.assertNotNull("API_KEY environment variable is not set", API_KEY);
-        var user = new User();
-        user.setFirstName(firstName);
-        user.setLastName(lastName);
-        user.setCprNumber(cprNumber);
-
-        var balance = new BigDecimal(initialBalance);
-        var account = bank.createAccountWithBalance(API_KEY, user, balance);
-        accounts.add(account);
-        return account;
-    }
-
-    @After
-    public void tearDown() throws BankServiceException_Exception {
-        if (customer != null && customer.id != null) {
-            customerService.unregister(customer);
-        }
-        if (merchant != null && merchant.id != null) {
-            merchantService.unregister(merchant);
-        }
-
-        for (var account : accounts) {
-            bank.retireAccount(API_KEY, account);
-        }
-    }
-
-    @Given("a customer with name {string}, last name {string}, and CPR {string}")
-    public void aCustomerWithNameLastNameAndCPR(String firstName, String lastName, String cprNumber) {
-        customer = new Customer(null, firstName, lastName, cprNumber, null);
-    }
-
-    @Given("the customer is registered with the bank with an initial balance of {string} kr")
-    public void theCustomerIsRegisteredWithTheBankWithAnInitialBalanceOfKr(String balance) throws BankServiceException_Exception {
-        try {
-            var bankId = registerAccount(customer.firstName, customer.lastName, customer.cprNumber, balance);
-            customer.bankId = bankId;
-        } catch (BankServiceException_Exception e) {
-            Assert.fail("Failed to register customer with bank: " + e.getMessage());
-        }
-    }
-
-    @Given("the customer is registered with Simple DTU Pay using their bank account")
-    public void theCustomerIsRegisteredWithSimpleDTUPayUsingTheirBankAccount() throws BankServiceException_Exception {
-        customer = customerService.register(customer);
-        Assert.assertNotNull(customer.id);
-    }
-
-    @Given("a merchant with name {string}, last name {string}, and CPR {string}")
-    public void aMerchantWithNameLastNameAndCPR(String firstName, String lastName, String cprNumber) {
-        merchant = new Merchant(null, firstName, lastName, cprNumber, null);
-    }
-
-    @Given("the merchant is registered with the bank with an initial balance of {string} kr")
-    public void theMerchantIsRegisteredWithTheBankWithAnInitialBalanceOfKr(String amount) throws Exception {
-        var bankId = registerAccount(merchant.firstName, merchant.lastName, merchant.cprNumber, amount);
-        merchant.bankId = bankId;
-    }
-
-    @Given("the merchant is registered with Simple DTU Pay using their bank account")
-    public void theMerchantIsRegisteredWithSimpleDTUPayUsingTheirBankAccount() {
-        merchant = merchantService.register(merchant);
-        Assert.assertNotNull(merchant.id);
-    }
-
-    @Given("the customer has {int} unused tokens")
-    public void theCustomerHasUnusedTokens(Integer numberOfTokens) {
-        Assert.assertNotNull("Customer must be registered before requesting tokens", customer);
-        try {
-            tokens = customerService.requestMoreTokens(customer, numberOfTokens);
-        } catch (Exception e) {
-            Assert.fail("Failed to request tokens: " + e.getMessage());
-        }
-        Assert.assertEquals("Expected to receive " + numberOfTokens + " tokens, but got " + tokens.size(),
-                numberOfTokens.intValue(), tokens.size());
+    public PaymentServiceSteps(SharedState state) {
+        this.state = state;
     }
 
     @When("the customer initiates a payment for {string} kr using a token")
     public void theMerchantInitiatesAPaymentForKrByTheCustomer(String amount) {
-        Assert.assertNotNull(tokens);
-        Assert.assertFalse("Customer must have tokens to make a payment", tokens.isEmpty());
-        var token = tokens.getFirst();
+        assertNotNull(state.tokens);
+        assertFalse("Customer must have state.tokens to make a payment", state.tokens.isEmpty());
+        var token = state.tokens.getFirst();
         try {
-            successful = paymentService.pay(amount, customer.id, merchant.id, token);
+            state.successful = paymentService.pay(amount, state.customer.id, state.merchant.id, token);
         } catch (Exception e) {
-            successful = false;
-            errorMessage = e.getMessage();
+            state.successful = false;
+            state.errorMessage = e.getMessage();
         }
-        tokens.remove(token);
+        state.tokens.remove(token);
     }
 
     @Then("the payment is successful")
     public void thePaymentIsSuccessful() {
-        Assert.assertTrue("Expected payment to be successful, but it failed with error: " + errorMessage, successful);
+        assertTrue("Expected payment to be successful, but it failed with error: " + state.errorMessage, state.successful);
     }
-
     @Then("the balance of the customer at the bank is {string} kr")
     public void theBalanceOfTheCustomerAtTheBankIsKr(String amount) throws Exception {
         BigDecimal amountBigDecimal = new BigDecimal(amount);
-        BigDecimal balance = bank.getAccount(customer.bankId).getBalance();
-        Assert.assertEquals(
+        BigDecimal balance = state.bank.getAccount(state.customer.bankId).getBalance();
+        assertEquals(
                 "Expected balance " + amountBigDecimal + " but was " + balance,
                 0, amountBigDecimal.compareTo(balance)
         );
@@ -146,31 +49,11 @@ public class PaymentServiceSteps {
     @Then("the balance of the merchant at the bank is {string} kr")
     public void theBalanceOfTheMerchantAtTheBankIsKr(String amount) throws Exception {
         BigDecimal amountBigDecimal = new BigDecimal(amount);
-        BigDecimal balance = bank.getAccount(merchant.bankId).getBalance();
-        Assert.assertEquals(
+        BigDecimal balance = state.bank.getAccount(state.merchant.bankId).getBalance();
+        assertEquals(
                 "Expected balance " + amountBigDecimal + " but was " + balance,
                 0, amountBigDecimal.compareTo(balance)
         );
     }
 
-    @Then("the customer has {int} unused tokens left")
-    public void thenTheCustomerHasUnusedTokens(Integer numberOfTokens) {
-        Assert.assertNotNull("Customer must be registered before retrieving tokens", customer);
-        try {
-            tokens = customerService.retrieveTokens(customer);
-        } catch (Exception e) {
-            Assert.fail("Failed to request tokens: " + e.getMessage());
-        }
-        Assert.assertEquals("Expected to receive " + numberOfTokens + " tokens, but got " + tokens.size(),
-                numberOfTokens.intValue(), tokens.size());
-    }
-
-    @When("the customer requests {int} tokens")
-    public void theCustomerRequestsTokens(Integer numberOfTokens) {
-        try {
-            tokens = customerService.requestMoreTokens(customer, numberOfTokens);
-        } catch (Exception e) {
-            Assert.fail("Failed to request tokens: " + e.getMessage());
-        }
-    }
 }
