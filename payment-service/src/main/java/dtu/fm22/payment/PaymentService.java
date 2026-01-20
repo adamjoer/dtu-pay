@@ -1,12 +1,9 @@
 package dtu.fm22.payment;
 
-import dtu.fm22.payment.record.Customer;
-import dtu.fm22.payment.record.Merchant;
-import dtu.fm22.payment.record.PaymentRequest;
+import dtu.fm22.payment.record.*;
 import dtu.ws.fastmoney.BankService;
 import dtu.ws.fastmoney.BankServiceException_Exception;
 import dtu.ws.fastmoney.BankService_Service;
-import dtu.fm22.payment.record.Payment;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -18,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import messaging.Event;
 import messaging.MessageQueue;
 import messaging.TopicNames;
+import messaging.implementations.RabbitMQResponse;
 
 public class PaymentService {
 
@@ -74,8 +72,9 @@ public class PaymentService {
         }
 
         if (!tokenValid) {
-            System.err.println("tryCompletePayment: Token validation failed for payment request");
-            // Could publish a payment failed event here
+            var errorResponse = new RabbitMQResponse<Payment>(400, "Invalid or used token");
+            var errorEvent = new Event(TopicNames.PAYMENT_CREATED, errorResponse, correlationId);
+            queue.publish(errorEvent);
             return;
         }
 
@@ -117,7 +116,7 @@ public class PaymentService {
             queue.publish(markUsedEvent);
         }
 
-        Event paymentCreatedEvent = new Event(TopicNames.PAYMENT_CREATED, payment, paymentId);
+        Event paymentCreatedEvent = new Event(TopicNames.PAYMENT_CREATED, new RabbitMQResponse<>(payment), paymentId);
         queue.publish(paymentCreatedEvent);
     }
 

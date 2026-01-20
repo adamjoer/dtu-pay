@@ -25,3 +25,16 @@ Feature: Token Management
     And the customer has 0 unused tokens left
     And the balance of the customer at the bank is "2550" kr
     And the balance of the merchant at the bank is "1450" kr
+
+  Scenario: Payment attempt with invalid token
+    Given a customer with name "Hannah", last name "Davis", and CPR "567890-4321"
+    And the customer is registered with the bank with an initial balance of "2000" kr
+    And the customer is registered with Simple DTU Pay using their bank account
+    And a merchant with name "Ian", last name "Wilson", and CPR "444555-6666"
+    And the merchant is registered with the bank with an initial balance of "800" kr
+    And the merchant is registered with Simple DTU Pay using their bank account
+    When the customer initiates a payment for "50" kr using an invalid token
+    Then the payment fails
+    And the error message is "Invalid or used token"
+    And the balance of the customer at the bank is "2000" kr
+    And the balance of the merchant at the bank is "800" kr

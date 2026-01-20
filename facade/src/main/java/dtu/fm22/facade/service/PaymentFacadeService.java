@@ -1,7 +1,9 @@
 package dtu.fm22.facade.service;
 
-import com.google.gson.reflect.TypeToken;
+import dtu.fm22.facade.exceptions.ExceptionFactory;
 import dtu.fm22.facade.record.PaymentRequest;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.WebApplicationException;
 import dtu.fm22.facade.record.TokenValidationRequest;
 import jakarta.enterprise.context.ApplicationScoped;
 import dtu.fm22.facade.record.Payment;
@@ -10,13 +12,8 @@ import messaging.Event;
 import messaging.MessageQueue;
 import messaging.TopicNames;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 
 @ApplicationScoped
 public final class PaymentFacadeService {
@@ -48,7 +45,15 @@ public final class PaymentFacadeService {
         var validationEvent = new Event(TopicNames.TOKEN_VALIDATION_REQUESTED, validationRequest, correlationId);
         queue.publish(validationEvent);
 
-        return paymentInProgress.get(correlationId).orTimeout(5, TimeUnit.SECONDS).join();
+        try {
+            return paymentInProgress.get(correlationId).orTimeout(5, TimeUnit.SECONDS).join();
+        } catch (CompletionException e) {
+            if (e.getCause() instanceof TimeoutException)
+                throw new InternalServerErrorException("Payment processing timed out");
+            if (e.getCause() instanceof WebApplicationException)
+                throw (WebApplicationException) e.getCause();
+            throw e;
+        }
     }
 
     public Optional<Payment> getPaymentById(String id) {
@@ -61,13 +66,15 @@ public final class PaymentFacadeService {
     }
 
     private void handlePaymentCreated(Event event) {
-        var payment = event.getArgument(0, Payment.class);
+        var paymentResponse = event.getArgumentWithError(0, Payment.class);
         var correlationId = event.getArgument(1, UUID.class);
 
         var future = paymentInProgress.get(correlationId);
         if (future != null) {
-            future.complete(payment);
-//            paymentInProgress.remove(correlationId);
+            if (paymentResponse.isError())
+                future.completeExceptionally(ExceptionFactory.fromRabbitMqResponse(paymentResponse));
+            else
+                future.complete(paymentResponse.getData());
         }
     }
 
