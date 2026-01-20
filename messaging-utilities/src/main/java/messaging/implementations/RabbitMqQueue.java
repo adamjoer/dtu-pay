@@ -36,12 +36,11 @@ public class RabbitMqQueue implements MessageQueue {
 	public void publish(Event event) {
 		Utils.logPublish(event);
 //		System.out.format("[x] publish(%s)\n", event);
-		System.out.format("Trying to encode in json");
         String message;
 		try {
 			message = new Gson().toJson(event);
 		} catch (Exception e) {
-			System.out.format("Failed to encode in json: %s", e.getMessage());
+			System.out.format("[X] Failed to encode in json: %s", e.getMessage());
 			throw new Error(e);
 		}
 		try {
