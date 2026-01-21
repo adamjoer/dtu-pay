@@ -26,7 +26,6 @@ public class PaymentService {
     private final Map<UUID, PaymentInfo> pendingPaymentInfo = new ConcurrentHashMap<>();
     private final Map<UUID, PaymentRequest> pendingPaymentRequests = new ConcurrentHashMap<>();
     private final Map<UUID, String> resolvedCustomerIds = new ConcurrentHashMap<>();
-    private final Map<UUID, String> tokenValidationErrors = new ConcurrentHashMap<>();
 
     private final MessageQueue queue;
 
@@ -66,19 +65,18 @@ public class PaymentService {
      * @author s215206
      */
     public void handleTokenValidationProvided(Event event) {
-        var isValid = event.getArgument(0, Boolean.class);
-        var customerId = event.getArgument(1, String.class);
-        var message = event.getArgument(2, String.class);
-        var correlationId = event.getArgument(3, UUID.class);
+        RabbitMQResponse<String> response = event.getArgumentWithError(0, String.class);
+        var correlationId = event.getArgument(1, UUID.class);
 
-        if (!isValid) {
+        if (response.isError()) {
             // Token invalid - send error response immediately with generic message
-            tokenValidationErrors.put(correlationId, message);
-            var errorResponse = new RabbitMQResponse<Payment>(400, "Invalid or used token");
+            var errorResponse = new RabbitMQResponse<>(response.statusCode(), response.getErrorMessage());
             var errorEvent = new Event(TopicNames.PAYMENT_CREATED, errorResponse, correlationId);
             queue.publish(errorEvent);
             return;
         }
+
+        var customerId = response.getData();
 
         // Token is valid - store customerId and request payment info
         resolvedCustomerIds.put(correlationId, customerId);
@@ -136,6 +134,9 @@ public class PaymentService {
                     "from " + customer.firstName() + " to " + merchant.firstName());
         } catch (BankServiceException_Exception e) {
             System.err.println("doPayment: Bank transfer failed: " + e.getMessage());
+            var errorResponse = new RabbitMQResponse<Payment>(400, "Bank transfer failed: " + e.getMessage());
+            var errorEvent = new Event(TopicNames.PAYMENT_CREATED, errorResponse, paymentId);
+            queue.publish(errorEvent);
             return;
         }
 
@@ -143,10 +144,8 @@ public class PaymentService {
         payments.put(paymentId, payment);
 
         // Mark token as used after successful payment
-        if (token != null && !token.isEmpty()) {
-            var markUsedEvent = new Event(TopicNames.TOKEN_MARK_USED_REQUESTED, token, paymentId);
-            queue.publish(markUsedEvent);
-        }
+        var markUsedEvent = new Event(TopicNames.TOKEN_MARK_USED_REQUESTED, token, paymentId);
+        queue.publish(markUsedEvent);
 
         Event paymentCreatedEvent = new Event(TopicNames.PAYMENT_CREATED, new RabbitMQResponse<>(payment), paymentId);
         queue.publish(paymentCreatedEvent);

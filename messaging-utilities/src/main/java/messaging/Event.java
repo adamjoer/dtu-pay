@@ -69,12 +69,12 @@ public class Event implements Serializable {
 	/**
 	 * @author s200718
 	 */
-	public <T> RabbitMQResponse<T> getArgumentWithError(int i, Class<T> cls) {
-		var type = TypeToken.getParameterized(RabbitMQResponse.class, cls);
+	public <T> RabbitMQResponse<T> getArgumentWithError(int i, Type type) {
+		var token = TypeToken.getParameterized(RabbitMQResponse.class, type);
 
 		var gson = new Gson();
 		var jsonString = gson.toJson(arguments[i]);
-		return gson.fromJson(jsonString, type.getType());
+		return gson.fromJson(jsonString, token.getType());
 	}
 	
 	public <T> T getArgument(int i, Type cls) {

@@ -11,12 +11,6 @@ public class RabbitMQResponse<T> {
 
     private final T data;
 
-    public RabbitMQResponse(String errorMessage) {
-        this.success = false;
-        this.errorMessage = errorMessage;
-        this.statusCode = 500;
-        this.data = null;
-    }
     public RabbitMQResponse(int statusCode, String errorMessage) {
         this.success = false;
         this.errorMessage = errorMessage;
