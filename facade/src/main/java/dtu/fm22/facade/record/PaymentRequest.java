@@ -6,10 +6,6 @@ import jakarta.validation.constraints.NotNull;
 public record PaymentRequest(
         @NotNull
         @NotEmpty
-        String customerId,
-
-        @NotNull
-        @NotEmpty
         String merchantId,
 
         @NotNull

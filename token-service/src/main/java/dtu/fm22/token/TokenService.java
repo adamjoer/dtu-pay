@@ -158,52 +158,37 @@ public class TokenService {
     }
 
     /**
-     * Handles token validation request (check if token is valid and belongs to customer)
+     * Handles token validation request (check if token is valid)
+     * Returns the customerId associated with the token in the response
      */
     private void handleTokenValidationRequested(Event event) {
         var validationRequest = event.getArgument(0, TokenValidationRequest.class);
         var correlationId = event.getArgument(1, UUID.class);
 
-        try {
-            var tokenValue = validationRequest.tokenValue();
-            var customerId = UUID.fromString(validationRequest.customerId());
+        var tokenValue = validationRequest.tokenValue();
+        var token = tokenLookup.get(tokenValue);
 
-            var token = tokenLookup.get(tokenValue);
-
-            if (token == null) {
-                // Token doesn't exist
-                var errorEvent = new Event(TopicNames.TOKEN_VALIDATION_PROVIDED,
-                        false, "Token not found", correlationId);
-                queue.publish(errorEvent);
-                return;
-            }
-
-            if (token.used()) {
-                // Token already used
-                var errorEvent = new Event(TopicNames.TOKEN_VALIDATION_PROVIDED,
-                        false, "Token has already been used", correlationId);
-                queue.publish(errorEvent);
-                return;
-            }
-
-            if (!token.customerId().equals(customerId)) {
-                // Token doesn't belong to this customer
-                var errorEvent = new Event(TopicNames.TOKEN_VALIDATION_PROVIDED,
-                        false, "Token does not belong to this customer", correlationId);
-                queue.publish(errorEvent);
-                return;
-            }
-
-            // Token is valid
-            var successEvent = new Event(TopicNames.TOKEN_VALIDATION_PROVIDED,
-                    true, "Token is valid", correlationId);
-            queue.publish(successEvent);
-
-        } catch (IllegalArgumentException e) {
+        if (token == null) {
+            // Token doesn't exist
             var errorEvent = new Event(TopicNames.TOKEN_VALIDATION_PROVIDED,
-                    false, "Invalid customer ID format", correlationId);
+                    false, (String) null, "Token not found", correlationId);
             queue.publish(errorEvent);
+            return;
         }
+
+        if (token.used()) {
+            // Token already used
+            var errorEvent = new Event(TopicNames.TOKEN_VALIDATION_PROVIDED,
+                    false, (String) null, "Token has already been used", correlationId);
+            queue.publish(errorEvent);
+            return;
+        }
+
+        // Token is valid - return the customerId associated with the token
+        var customerId = token.customerId().toString();
+        var successEvent = new Event(TopicNames.TOKEN_VALIDATION_PROVIDED,
+                true, customerId, "Token is valid", correlationId);
+        queue.publish(successEvent);
     }
 
     /**

@@ -25,7 +25,8 @@ public class PaymentService {
 
     private final Map<UUID, PaymentInfo> pendingPaymentInfo = new ConcurrentHashMap<>();
     private final Map<UUID, PaymentRequest> pendingPaymentRequests = new ConcurrentHashMap<>();
-    private final Map<UUID, Boolean> pendingTokenValidations = new ConcurrentHashMap<>();
+    private final Map<UUID, String> resolvedCustomerIds = new ConcurrentHashMap<>();
+    private final Map<UUID, String> tokenValidationErrors = new ConcurrentHashMap<>();
 
     private final MessageQueue queue;
 
@@ -44,8 +45,40 @@ public class PaymentService {
         var paymentRequest = event.getArgument(0, PaymentRequest.class);
         var correlationId = event.getArgument(1, UUID.class);
 
+        // Store the payment request
         pendingPaymentRequests.put(correlationId, paymentRequest);
-        tryCompletePayment(correlationId);
+
+        // Request token validation (this will return customerId)
+        var tokenValidationRequest = new TokenValidationRequest(paymentRequest.token());
+        var tokenValidationEvent = new Event(TopicNames.TOKEN_VALIDATION_REQUESTED, tokenValidationRequest, correlationId);
+        queue.publish(tokenValidationEvent);
+    }
+
+    private void handleTokenValidationProvided(Event event) {
+        var isValid = event.getArgument(0, Boolean.class);
+        var customerId = event.getArgument(1, String.class);
+        var message = event.getArgument(2, String.class);
+        var correlationId = event.getArgument(3, UUID.class);
+
+        if (!isValid) {
+            // Token invalid - send error response immediately
+            tokenValidationErrors.put(correlationId, message);
+            var errorResponse = new RabbitMQResponse<Payment>(400, message);
+            var errorEvent = new Event(TopicNames.PAYMENT_CREATED, errorResponse, correlationId);
+            queue.publish(errorEvent);
+            return;
+        }
+
+        // Token is valid - store customerId and request payment info
+        resolvedCustomerIds.put(correlationId, customerId);
+
+        var paymentRequest = pendingPaymentRequests.get(correlationId);
+        if (paymentRequest != null) {
+            // Step 2: Request user info using resolved customerId
+            var paymentInfoRequest = new PaymentInfoRequest(customerId, paymentRequest.merchantId());
+            var paymentInfoEvent = new Event(TopicNames.PAYMENT_INFO_REQUESTED, paymentInfoRequest, correlationId);
+            queue.publish(paymentInfoEvent);
+        }
     }
 
     private void handlePaymentInfoProvided(Event event) {
@@ -55,6 +88,8 @@ public class PaymentService {
 
         var paymentInfo = new PaymentInfo(customer, merchant);
         pendingPaymentInfo.put(correlationId, paymentInfo);
+
+        // Complete the payment
         tryCompletePayment(correlationId);
     }
 
@@ -65,34 +100,14 @@ public class PaymentService {
 
         var request = pendingPaymentRequests.get(correlationId);
         var info = pendingPaymentInfo.get(correlationId);
-        var tokenValid = pendingTokenValidations.get(correlationId);
+        var customerId = resolvedCustomerIds.get(correlationId);
 
-        if (request == null || info == null || tokenValid == null) {
-            return;
-        }
-
-        if (!tokenValid) {
-            var errorResponse = new RabbitMQResponse<Payment>(400, "Invalid or used token");
-            var errorEvent = new Event(TopicNames.PAYMENT_CREATED, errorResponse, correlationId);
-            queue.publish(errorEvent);
+        // Need all components to complete payment
+        if (request == null || info == null || customerId == null) {
             return;
         }
 
         doPayment(info.customer(), info.merchant(), request.amount(), request.token(), correlationId);
-
-        // Clean up
-        // pendingPaymentRequests.remove(correlationId);
-        // pendingPaymentInfo.remove(correlationId);
-        // pendingTokenValidations.remove(correlationId);
-    }
-
-    private void handleTokenValidationProvided(Event event) {
-        var isValid = event.getArgument(0, Boolean.class);
-        var message = event.getArgument(1, String.class);
-        var correlationId = event.getArgument(2, UUID.class);
-
-        pendingTokenValidations.put(correlationId, isValid);
-        tryCompletePayment(correlationId);
     }
 
     private void doPayment(Customer customer, Merchant merchant, String amount, String token, UUID paymentId) {

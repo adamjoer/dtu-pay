@@ -4,7 +4,6 @@ import dtu.fm22.facade.exceptions.ExceptionFactory;
 import dtu.fm22.facade.record.PaymentRequest;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.WebApplicationException;
-import dtu.fm22.facade.record.TokenValidationRequest;
 import jakarta.enterprise.context.ApplicationScoped;
 import dtu.fm22.facade.record.Payment;
 import jakarta.inject.Inject;
@@ -35,15 +34,8 @@ public final class PaymentFacadeService {
         var correlationId = UUID.randomUUID();
         paymentInProgress.put(correlationId, new CompletableFuture<>());
 
-        var paymentInfoRequestedEvent = new Event(TopicNames.PAYMENT_INFO_REQUESTED, paymentRequest, correlationId);
-        queue.publish(paymentInfoRequestedEvent);
-
         var paymentRequestedEvent = new Event(TopicNames.PAYMENT_REQUESTED, paymentRequest, correlationId);
         queue.publish(paymentRequestedEvent);
-
-        var validationRequest = new TokenValidationRequest(paymentRequest.token(), paymentRequest.customerId());
-        var validationEvent = new Event(TopicNames.TOKEN_VALIDATION_REQUESTED, validationRequest, correlationId);
-        queue.publish(validationEvent);
 
         try {
             return paymentInProgress.get(correlationId).orTimeout(5, TimeUnit.SECONDS).join();

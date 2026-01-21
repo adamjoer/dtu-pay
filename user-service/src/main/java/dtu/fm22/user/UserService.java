@@ -4,7 +4,7 @@ import dtu.fm22.user.exceptions.CustomerNotFoundException;
 import dtu.fm22.user.exceptions.MerchantNotFoundException;
 import dtu.fm22.user.record.Customer;
 import dtu.fm22.user.record.Merchant;
-import dtu.fm22.user.record.PaymentRequest;
+import dtu.fm22.user.record.PaymentInfoRequest;
 import messaging.Event;
 import messaging.MessageQueue;
 import messaging.TopicNames;
@@ -120,18 +120,18 @@ public class UserService {
     }
 
     private void handlePaymentInfoRequested(Event event) {
-        var paymentRequest = event.getArgument(0, PaymentRequest.class);
+        var paymentInfoRequest = event.getArgument(0, PaymentInfoRequest.class);
         var correlationId = event.getArgument(1, UUID.class);
 
         try {
-            var customer = getByCustomerId(paymentRequest.customerId()).orElse(null);
-            var merchant = getMerchantById(paymentRequest.merchantId()).orElse(null);
+            var customer = getByCustomerId(paymentInfoRequest.customerId()).orElse(null);
+            var merchant = getMerchantById(paymentInfoRequest.merchantId()).orElse(null);
 
             var paymentInfoProvidedEvent = new Event(TopicNames.PAYMENT_INFO_PROVIDED, customer, merchant, correlationId);
             queue.publish(paymentInfoProvidedEvent);
 
         } catch (IllegalArgumentException e) {
-            System.err.println("handlePaymentInfoRequested: Invalid UUID format in payment request");
+            System.err.println("handlePaymentInfoRequested: Invalid UUID format in payment info request");
         }
     }
 
