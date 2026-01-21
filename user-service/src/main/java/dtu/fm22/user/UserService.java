@@ -38,7 +38,7 @@ public class UserService {
         return customer;
     }
 
-    private void handleRegisterCustomer(Event event) {
+    public void handleRegisterCustomer(Event event) {
         var customer = event.getArgument(0, Customer.class);
         var correlationId = event.getArgument(1, UUID.class);
         customer = registerCustomer(customer);
@@ -58,7 +58,7 @@ public class UserService {
         }
     }
 
-    private void handleUnregisterCustomer(Event event) {
+    public void handleUnregisterCustomer(Event event) {
         var id = event.getArgument(0, String.class);
         unregisterCustomer(id);
         var customerEvent = new Event(TopicNames.CUSTOMER_UNREGISTRATION_COMPLETED, id);
@@ -72,7 +72,7 @@ public class UserService {
         return merchant;
     }
 
-    private void handleRegisterMerchant(Event event) {
+    public void handleRegisterMerchant(Event event) {
         var merchant = event.getArgument(0, Merchant.class);
         var correlationId = event.getArgument(1, UUID.class);
         merchant = registerMerchant(merchant);
@@ -92,14 +92,14 @@ public class UserService {
         }
     }
 
-    private void handleUnregisterMerchant(Event event) {
+    public void handleUnregisterMerchant(Event event) {
         var id = event.getArgument(0, String.class);
         unregisterMerchant(id);
         var merchantEvent = new Event(TopicNames.MERCHANT_UNREGISTRATION_COMPLETED, id);
         queue.publish(merchantEvent);
     }
 
-    private void handleCustomerInfoRequested(Event event) {
+    public void handleCustomerInfoRequested(Event event) {
         var customerId = event.getArgument(0, String.class);
         var correlationId = event.getArgument(1, UUID.class);
 
@@ -109,7 +109,7 @@ public class UserService {
         queue.publish(customerInfoProvidedEvent);
     }
 
-    private void handleMerchantInfoRequested(Event event) {
+    public void handleMerchantInfoRequested(Event event) {
         var merchantId = event.getArgument(0, String.class);
         var correlationId = event.getArgument(1, UUID.class);
 
@@ -119,7 +119,7 @@ public class UserService {
         queue.publish(merchantInfoProvidedEvent);
     }
 
-    private void handlePaymentInfoRequested(Event event) {
+    public void handlePaymentInfoRequested(Event event) {
         var paymentInfoRequest = event.getArgument(0, PaymentInfoRequest.class);
         var correlationId = event.getArgument(1, UUID.class);
 
@@ -154,6 +154,4 @@ public class UserService {
             return Optional.empty();
         }
     }
-
-
 }

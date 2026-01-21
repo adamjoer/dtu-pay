@@ -52,7 +52,7 @@ public class TokenService {
     /**
      * Handles token replenishment request (requesting new tokens)
      */
-    private void handleTokenReplenishRequested(Event event) {
+    public void handleTokenReplenishRequested(Event event) {
         var tokenRequest = event.getArgument(0, TokenRequest.class);
         var correlationId = event.getArgument(1, UUID.class);
 
@@ -132,7 +132,7 @@ public class TokenService {
     /**
      * Handles token request (get existing unused tokens)
      */
-    private void handleTokenRequested(Event event) {
+    public void handleTokenRequested(Event event) {
         System.out.format("TokenService: Received CUSTOMER_TOKEN_REQUESTED event: %s%n", event);
         var customerIdStr = event.getArgument(0, String.class);
         var correlationId = event.getArgument(1, UUID.class);
@@ -161,7 +161,7 @@ public class TokenService {
      * Handles token validation request (check if token is valid)
      * Returns the customerId associated with the token in the response
      */
-    private void handleTokenValidationRequested(Event event) {
+    public void handleTokenValidationRequested(Event event) {
         var validationRequest = event.getArgument(0, TokenValidationRequest.class);
         var correlationId = event.getArgument(1, UUID.class);
 
@@ -194,7 +194,7 @@ public class TokenService {
     /**
      * Handles request to mark a token as used
      */
-    private void handleTokenMarkUsedRequested(Event event) {
+    public void handleTokenMarkUsedRequested(Event event) {
         var tokenValue = event.getArgument(0, String.class);
         var correlationId = event.getArgument(1, UUID.class);
 

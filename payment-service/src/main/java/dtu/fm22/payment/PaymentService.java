@@ -21,7 +21,7 @@ public class PaymentService {
 
     private final ConcurrentHashMap<UUID, Payment> payments = new ConcurrentHashMap<>();
 
-    private final BankService bankService = new BankService_Service().getBankServicePort();
+    private final BankService bankService;
 
     private final Map<UUID, PaymentInfo> pendingPaymentInfo = new ConcurrentHashMap<>();
     private final Map<UUID, PaymentRequest> pendingPaymentRequests = new ConcurrentHashMap<>();
@@ -31,7 +31,12 @@ public class PaymentService {
     private final MessageQueue queue;
 
     public PaymentService(MessageQueue queue) {
+        this(queue, new BankService_Service().getBankServicePort());
+    }
+
+    public PaymentService(MessageQueue queue, BankService bankService) {
         this.queue = queue;
+        this.bankService = bankService;
         this.queue.addHandler(TopicNames.PAYMENT_REQUESTED, this::handlePaymentRequested);
         this.queue.addHandler(TopicNames.PAYMENT_INFO_PROVIDED, this::handlePaymentInfoProvided);
         this.queue.addHandler(TopicNames.TOKEN_VALIDATION_PROVIDED, this::handleTokenValidationProvided);
@@ -41,7 +46,7 @@ public class PaymentService {
         this.queue.addHandler(TopicNames.MANAGER_REPORT_PROVIDED, this::handleManagerReportProvided);
     }
 
-    private void handlePaymentRequested(Event event) {
+    public void handlePaymentRequested(Event event) {
         var paymentRequest = event.getArgument(0, PaymentRequest.class);
         var correlationId = event.getArgument(1, UUID.class);
 
@@ -54,7 +59,7 @@ public class PaymentService {
         queue.publish(tokenValidationEvent);
     }
 
-    private void handleTokenValidationProvided(Event event) {
+    public void handleTokenValidationProvided(Event event) {
         var isValid = event.getArgument(0, Boolean.class);
         var customerId = event.getArgument(1, String.class);
         var message = event.getArgument(2, String.class);
@@ -81,7 +86,7 @@ public class PaymentService {
         }
     }
 
-    private void handlePaymentInfoProvided(Event event) {
+    public void handlePaymentInfoProvided(Event event) {
         var customer = event.getArgument(0, Customer.class);
         var merchant = event.getArgument(1, Merchant.class);
         var correlationId = event.getArgument(2, UUID.class);
@@ -135,7 +140,7 @@ public class PaymentService {
         queue.publish(paymentCreatedEvent);
     }
 
-    private void handleTransactionRequested(Event event) {
+    public void handleTransactionRequested(Event event) {
         var id = event.getArgument(0, String.class);
         var correlationId = event.getArgument(1, UUID.class);
         try {
@@ -149,7 +154,7 @@ public class PaymentService {
         }
     }
 
-    private void handleCustomerReportRequested(Event event) {
+    public void handleCustomerReportRequested(Event event) {
         var customer = event.getArgument(0, Customer.class);
         var filteredList = payments.values()
                 .stream()
@@ -159,7 +164,7 @@ public class PaymentService {
         queue.publish(paymentCreatedEvent);
     }
 
-    private void handleMerchantReportRequested(Event event) {
+    public void handleMerchantReportRequested(Event event) {
         var merchant = event.getArgument(0, Merchant.class);
         var filteredList = payments
                 .values()
@@ -172,7 +177,7 @@ public class PaymentService {
         queue.publish(paymentCreatedEvent);
     }
 
-    private void handleManagerReportProvided(Event event) {
+    public void handleManagerReportProvided(Event event) {
         var correlationId = event.getArgument(0, UUID.class);
         var allPayments = payments
                 .values()
