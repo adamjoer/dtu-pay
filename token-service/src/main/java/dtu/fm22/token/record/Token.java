@@ -1,7 +1,9 @@
 package dtu.fm22.token.record;
 
 import java.util.UUID;
-
+/*
+ ** author s242576
+ */
 public record Token(
         String tokenValue,
         UUID customerId,
