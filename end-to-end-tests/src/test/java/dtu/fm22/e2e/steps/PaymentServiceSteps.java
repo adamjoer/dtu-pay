@@ -14,9 +14,6 @@ public class PaymentServiceSteps {
     private final SharedState state;
     private final PaymentService paymentService = new PaymentService();
 
-    public boolean successful = false;
-    public String errorMessage;
-
     public PaymentServiceSteps(SharedState state) {
         this.state = state;
     }
@@ -27,18 +24,19 @@ public class PaymentServiceSteps {
         assertFalse("Customer must have state.tokens to make a payment", state.tokens.isEmpty());
         var token = state.tokens.getFirst();
         try {
-            successful = paymentService.pay(amount, state.merchant.id, token);
+            state.successful = paymentService.pay(amount, state.merchant.id, token);
         } catch (Exception e) {
-            successful = false;
-            errorMessage = e.getMessage();
+            state.successful = false;
+            state.errorMessage = e.getMessage();
         }
         state.tokens.remove(token);
     }
 
     @Then("the payment is successful")
     public void thePaymentIsSuccessful() {
-        assertTrue("Expected payment to be successful, but it failed with error: " + errorMessage, successful);
+        assertTrue("Expected payment to be successful, but it failed with error: " + state.errorMessage, state.successful);
     }
+
     @Then("the balance of the customer at the bank is {string} kr")
     public void theBalanceOfTheCustomerAtTheBankIsKr(String amount) throws Exception {
         BigDecimal amountBigDecimal = new BigDecimal(amount);
@@ -66,41 +64,12 @@ public class PaymentServiceSteps {
         var token = state.tokens.getFirst();
         try {
             // Use a random UUID as the unknown merchant ID
-            successful = paymentService.pay(amount, UUID.randomUUID(), token);
+            state.successful = paymentService.pay(amount, UUID.randomUUID(), token);
         } catch (Exception e) {
-            successful = false;
-            errorMessage = e.getMessage();
+            state.successful = false;
+            state.errorMessage = e.getMessage();
         }
         state.tokens.remove(token);
-    }
-
-    @Then("the payment fails")
-    public void thePaymentFails() {
-        assertFalse("Expected payment to fail, but it succeeded", successful);
-    }
-
-    @Then("the error message is {string}")
-    public void theErrorMessageIs(String expectedMessage) {
-        assertNotNull("Error message should not be null", errorMessage);
-        assertEquals(expectedMessage, errorMessage);
-    }
-
-    @Then("the error message contains {string}")
-    public void theErrorMessageContains(String expectedMessage) {
-        assertNotNull("Error message should not be null", errorMessage);
-        assertTrue("Expected error message to contain '" + expectedMessage + "' but was: " + errorMessage,
-                errorMessage.toLowerCase().contains(expectedMessage.toLowerCase()));
-    }
-
-    @When("the customer initiates a payment for {string} kr using an invalid token")
-    public void theCustomerInitiatesAPaymentUsingAnInvalidToken(String amount) {
-        var invalidToken = "invalid-token-" + UUID.randomUUID();
-        try {
-            successful = paymentService.pay(amount, state.merchant.id, invalidToken);
-        } catch (Exception e) {
-            successful = false;
-            errorMessage = e.getMessage();
-        }
     }
 
 }
