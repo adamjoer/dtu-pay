@@ -74,7 +74,7 @@ public class ManagerFacadeService {
     }
 
     /**
-     * @author s242575,s200718, s205135
+     * @author s242575,s200718, s205135, s232268
      */
     public Collection<Payment> getManagerReport() {
         var correlationId = UUID.randomUUID();
@@ -86,7 +86,7 @@ public class ManagerFacadeService {
     }
 
     /**
-     * @author s242575,s200718, s205135
+     * @author s242575,s200718, s205135, s232268
      */
     public void handleReportProvided(Event event) {
         var collectionType = new TypeToken<Collection<Payment>>() {
