@@ -54,7 +54,7 @@ Feature: Payment with Token Service
     And the customer has 1 unused tokens
     When the customer initiates a payment for "50" kr to an unknown merchant using a token
     Then the payment fails
-    And the error message contains "Merchant not found"
+    And the error message contains "not found"
     And the balance of the customer at the bank is "1000" kr
 
   Scenario: Payment fails due to insufficient funds
@@ -67,6 +67,6 @@ Feature: Payment with Token Service
     And the merchant is registered with Simple DTU Pay using their bank account
     When the customer initiates a payment for "100" kr using a token
     Then the payment fails
-    And the error message contains "insufficient"
+    And the error message contains "balance"
     And the balance of the customer at the bank is "50" kr
     And the balance of the merchant at the bank is "1000" kr

@@ -39,7 +39,7 @@ public class PaymentService {
 
     public Collection<Payment> getAllPayments() {
         try (var client = ClientBuilder.newClient()) {
-            try (var response = client.target(baseUrl).path("payments").request().get()) {
+            try (var response = client.target(baseUrl).path("reports").request().get()) {
                 return response.readEntity(new GenericType<>() {
                 });
             }
