@@ -64,7 +64,6 @@ public class PaymentServiceSteps {
         var paymentRequest = new PaymentRequest(testMerchant.id().toString(), "100.00", testToken);
         var event = new Event(TopicNames.PAYMENT_REQUESTED, paymentRequest, correlationId);
         service.handlePaymentRequested(event);
-        publishedEvent.join(); // Wait for token validation request to be published
         publishedEvent = new CompletableFuture<>(); // Reset for next event
     }
 
@@ -86,7 +85,6 @@ public class PaymentServiceSteps {
         var paymentRequest = new PaymentRequest(testMerchant.id().toString(), "100.00", testToken);
         var paymentRequestEvent = new Event(TopicNames.PAYMENT_REQUESTED, paymentRequest, correlationId);
         service.handlePaymentRequested(paymentRequestEvent);
-        publishedEvent.join(); // Wait for token validation request
 
         // Step 2: Token validation provided (valid)
         publishedEvent = new CompletableFuture<>();
